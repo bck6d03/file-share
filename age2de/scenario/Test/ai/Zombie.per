@@ -1,0 +1,21 @@
+(defrule
+    (true)
+=>
+    (set-strategic-number sn-task-ungrouped-soldiers 1)
+    (set-strategic-number sn-enemy-sighted-response-distance 10)
+    (set-strategic-number sn-percent-enemy-sighted-response 20)
+    (set-strategic-number sn-wall-targeting-mode 1)	
+    (set-difficulty-parameter ability-to-dodge-missiles 100)
+    (set-difficulty-parameter ability-to-maintain-distance 100)
+    (disable-self)
+)
+(defrule
+    (gold-amount >= 100)
+=>
+    (set-strategic-number sn-wall-targeting-mode 1)
+)
+(defrule
+    (gold-amount < 100)
+=>
+    (set-strategic-number sn-wall-targeting-mode 0)
+)
