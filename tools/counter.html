@@ -22,23 +22,31 @@
 		background-color: #1EFF27;
 	}
 	
-	.counter { width:50%; height:40%; background-color: #5BFFE1; float:left;}
+	.counter { width:50%; height:60%; background-color: #5BFFE1; float:left;}
 	
-	#button-left{ width:100%; height:50%; float:left; font-size:5vw; }
-	#button-right{ width:100%; height:50%; float:left; font-size:5vw; }
+	#button-left{ width:100%; height:50%; float:left; padding:0; text-align:center; font-size:5vw; }
+	#button-right{ width:100%; height:50%; float:left; padding:0; text-align:center; font-size:5vw; }
+	
+	.input-num { width:100%; height:100%; font: 20vw sans-serif; text-align:center; }
 	
 	@media only screen and (max-width: 800px) {
 		/* For mobile phones: */
 		.counter { width:100%; height:40%; }
+		#button-left{ font-size:5vh; }
+		#button-right{ font-size:5vh; }	
 	}
 	
 	@media screen and (orientation: portrait) {
 		/*針對縱向 css去撰寫 */
 		.counter { width:100%; height:40%; }
+		#button-left{ font-size:5vh; }
+		#button-right{ font-size:5vh; }	
 	}
 	@media screen and (orientation: landscape) {
 		/*針對橫向 css去撰寫 */
-		.counter { width:50%; height:40%; }
+		.counter { width:50%; height:60%; }
+		#button-left{ font-size:5vw; }
+		#button-right{ font-size:5vw; }	
 	}
 	
 	</style>
@@ -51,7 +59,7 @@
 		</div>
 		
 		<div style="width:60%; height:100%; float:left; background-color: #DBDBDB;">
-			<input id="num0" type="number" style="width:100%; height:100%; font: 20vw sans-serif; text-align:center;" value="10" onchange="numUpdate(0, this.value)">
+			<input id="num0" class="input-num" type="number" value="10" onchange="numUpdate(0, this.value)">
 		</div>
 		
 		<div style="width:20%; height:100%; float:right;">
@@ -67,7 +75,7 @@
 		</div>
 		
 		<div style="width:60%; height:100%; float:left; background-color: #DBDBDB;">
-			<input id="num1" type="number" style="width:100%; height:100%; font: 20vw sans-serif; text-align:center;" value="10" onchange="numUpdate(1, this.value)">
+			<input id="num1" class="input-num" type="number" value="10" onchange="numUpdate(1, this.value)">
 		</div>
 		
 		<div style="width:20%; height:100%; float:right;">
