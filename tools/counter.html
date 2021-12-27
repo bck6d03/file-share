@@ -1,6 +1,6 @@
 <html>
 <head>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" >
 	<style>
 	.button {
 		display: inline-block;
@@ -30,6 +30,15 @@
 	@media only screen and (max-width: 800px) {
 		/* For mobile phones: */
 		.counter { width:100%; height:40%; }
+	}
+	
+	@media screen and (orientation: portrait) {
+		/*針對縱向 css去撰寫*/
+		.counter { width:100%; height:40%; }
+	}
+	@media screen and (orientation: landscape) {
+		/*針對橫向 css*去撰寫/
+		.counter { width:50%; height:40%; }
 	}
 	
 	</style>
@@ -66,7 +75,7 @@
 		<input id="button-right" class="button" type="button" onclick="addNum(1, -10);" value="-10" />
 		</div>
 	</div>
-
+	
 	<script>
 		var nums = [10, 10];
 		
@@ -77,7 +86,7 @@
 		function numUpdate(id, val){
 			nums[id] = parseInt(val);
 		}
-
+		
 	</script>
 
 </body>
