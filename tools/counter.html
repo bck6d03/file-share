@@ -1,33 +1,41 @@
 <html>
 <head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
 	<style>
 	.button {
-	  display: inline-block;
-	  padding: 15px 25px;
-	  font-size: 24px;
-	  cursor: pointer;
-	  text-align: center;
-	  text-decoration: none;
-	  outline: none;
-	  color: #fff;
-	  background-color: #4CAF50;
-	  border: none;
-	  border-radius: 15px;
+		display: inline-block;
+		padding: 15px 25px;
+		font-size: 24px;
+		cursor: pointer;
+		text-align: center;
+		text-decoration: none;
+		outline: none;
+		color: #fff;
+		background-color: #4CAF50;
+		border: none;
+		border-radius: 15px;
 	}
 
 	.button:hover {background-color: #3e8e41}
 
 	.button:active {
-	  background-color: #1EFF27;
+		background-color: #1EFF27;
 	}
+	
+	.counter { width:50%; height:40%; background-color: #5BFFE1; float:left;}
 	
 	#button-left{ width:100%; height:50%; float:left; font-size:5vw; }
 	#button-right{ width:100%; height:50%; float:left; font-size:5vw; }
-
+	
+	@media only screen and (max-width: 800px) {
+		/* For mobile phones: */
+		.counter { width:100%; height:40%; }
+	}
+	
 	</style>
 </head>
 <body>
-	<div style="width:100%; height:40%; background-color: #5BFFE1;">
+	<div class="counter">
 		<div style="width:20%; height:100%; float:left;">
 		<input id="button-left" class="button" type="button" onclick="addNum(0, 1);" value="+1" />
 		<input id="button-left" class="button" type="button" onclick="addNum(0, 10);" value="+10" />
@@ -43,7 +51,7 @@
 		</div>
 	</div>
 	
-	<div style="width:100%; height:40%; background-color: #5BFFE1;">
+	<div class="counter">
 		<div style="width:20%; height:100%; float:left;">
 		<input id="button-left" class="button" type="button" onclick="addNum(1, 1);" value="+1" />
 		<input id="button-left" class="button" type="button" onclick="addNum(1, 10);" value="+10" />
@@ -58,7 +66,7 @@
 		<input id="button-right" class="button" type="button" onclick="addNum(1, -10);" value="-10" />
 		</div>
 	</div>
-	
+
 	<script>
 		var nums = [10, 10];
 		
@@ -69,6 +77,8 @@
 		function numUpdate(id, val){
 			nums[id] = parseInt(val);
 		}
+
 	</script>
+
 </body>
 </html>
