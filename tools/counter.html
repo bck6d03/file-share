@@ -22,29 +22,32 @@
 		background-color: #1EFF27;
 	}
 	
-	.counter { width:50%; height:60%; background-color: #5BFFE1; float:left;}
+	.counter { width:50%; height:50%; background-color: #5BFFE1; float:left;}
 	
 	#button-left{ width:100%; height:50%; float:left; padding:0; text-align:center; font-size:5vw; }
 	#button-right{ width:100%; height:50%; float:left; padding:0; text-align:center; font-size:5vw; }
 	
-	.input-num { width:100%; height:100%; font: 20vw sans-serif; text-align:center; }
+	.input-num { width:100%; height:100%; font: 20vh sans-serif; text-align:center; }
 	
 	@media only screen and (max-width: 800px) {
 		/* For mobile phones: */
-		.counter { width:100%; height:40%; }
+		.counter { width:100%; height:25%; }
+		.input-num { font: 20vw sans-serif; }
 		#button-left{ font-size:5vh; }
 		#button-right{ font-size:5vh; }	
 	}
 	
 	@media screen and (orientation: portrait) {
 		/*針對縱向 css去撰寫 */
-		.counter { width:100%; height:40%; }
+		.counter { width:100%; height:25%; }
+		.input-num { font: 20vw sans-serif; }
 		#button-left{ font-size:5vh; }
 		#button-right{ font-size:5vh; }	
 	}
 	@media screen and (orientation: landscape) {
 		/*針對橫向 css去撰寫 */
-		.counter { width:50%; height:60%; }
+		.counter { width:50%; height:50%; }
+		.input-num { font: 20vh sans-serif; }
 		#button-left{ font-size:5vw; }
 		#button-right{ font-size:5vw; }	
 	}
@@ -84,8 +87,40 @@
 		</div>
 	</div>
 	
+	<div class="counter">
+		<div style="width:20%; height:100%; float:left;">
+		<input id="button-left" class="button" type="button" onclick="addNum(2, 1);" value="+1" />
+		<input id="button-left" class="button" type="button" onclick="addNum(2, 10);" value="+10" />
+		</div>
+		
+		<div style="width:60%; height:100%; float:left; background-color: #DBDBDB;">
+			<input id="num2" class="input-num" type="number" value="10" onchange="numUpdate(2, this.value)">
+		</div>
+		
+		<div style="width:20%; height:100%; float:right;">
+		<input id="button-right" class="button" type="button" onclick="addNum(2, -1);" value="-1" />
+		<input id="button-right" class="button" type="button" onclick="addNum(2, -10);" value="-10" />
+		</div>
+	</div>
+	
+	<div class="counter">
+		<div style="width:20%; height:100%; float:left;">
+		<input id="button-left" class="button" type="button" onclick="addNum(3, 1);" value="+1" />
+		<input id="button-left" class="button" type="button" onclick="addNum(3, 10);" value="+10" />
+		</div>
+		
+		<div style="width:60%; height:100%; float:left; background-color: #DBDBDB;">
+			<input id="num3" class="input-num" type="number" value="10" onchange="numUpdate(3, this.value)">
+		</div>
+		
+		<div style="width:20%; height:100%; float:right;">
+		<input id="button-right" class="button" type="button" onclick="addNum(3, -1);" value="-1" />
+		<input id="button-right" class="button" type="button" onclick="addNum(3, -10);" value="-10" />
+		</div>
+	</div>
+	
 	<script>
-		var nums = [10, 10];
+		var nums = [10, 10, 10, 10];
 		
 		function addNum(id, add){
 			nums[id] += add;
