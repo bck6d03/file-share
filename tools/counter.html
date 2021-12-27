@@ -29,57 +29,46 @@
 <body>
 	<div style="width:100%; height:40%; background-color: #5BFFE1;">
 		<div style="width:20%; height:100%; float:left;">
-		<input id="button-left" class="button" type="button" onclick="setNum(0, 1);" value="+1" />
-		<input id="button-left" class="button" type="button" onclick="setNum(0, 10);" value="+10" />
+		<input id="button-left" class="button" type="button" onclick="addNum(0, 1);" value="+1" />
+		<input id="button-left" class="button" type="button" onclick="addNum(0, 10);" value="+10" />
 		</div>
 		
 		<div style="width:60%; height:100%; float:left; background-color: #DBDBDB;">
-			<svg width="100%" height="100%">
-				<text id="num0" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" style="font: 20vw sans-serif">100</text>    
-			</svg>
+			<input id="num0" type="number" style="width:100%; height:100%; font: 20vw sans-serif; text-align:center;" value="10" onchange="numUpdate(0, this.value)">
 		</div>
 		
 		<div style="width:20%; height:100%; float:right;">
-		<input id="button-right" class="button" type="button" onclick="setNum(0, -1);" value="-1" />
-		<input id="button-right" class="button" type="button" onclick="setNum(0, -10);" value="-10" />
+		<input id="button-right" class="button" type="button" onclick="addNum(0, -1);" value="-1" />
+		<input id="button-right" class="button" type="button" onclick="addNum(0, -10);" value="-10" />
 		</div>
 	</div>
 	
 	<div style="width:100%; height:40%; background-color: #5BFFE1;">
 		<div style="width:20%; height:100%; float:left;">
-		<input id="button-left" class="button" type="button" onclick="setNum(1, 1);" value="+1" />
-		<input id="button-left" class="button" type="button" onclick="setNum(1, 10);" value="+10" />
+		<input id="button-left" class="button" type="button" onclick="addNum(1, 1);" value="+1" />
+		<input id="button-left" class="button" type="button" onclick="addNum(1, 10);" value="+10" />
 		</div>
 		
 		<div style="width:60%; height:100%; float:left; background-color: #DBDBDB;">
-			<svg width="100%" height="100%">
-				<text id="num1" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" style="font: 20vw sans-serif">100</text>    
-			</svg>
+			<input id="num1" type="number" style="width:100%; height:100%; font: 20vw sans-serif; text-align:center;" value="10" onchange="numUpdate(1, this.value)">
 		</div>
 		
 		<div style="width:20%; height:100%; float:right;">
-		<input id="button-right" class="button" type="button" onclick="setNum(1, -1);" value="-1" />
-		<input id="button-right" class="button" type="button" onclick="setNum(1, -10);" value="-10" />
+		<input id="button-right" class="button" type="button" onclick="addNum(1, -1);" value="-1" />
+		<input id="button-right" class="button" type="button" onclick="addNum(1, -10);" value="-10" />
 		</div>
 	</div>
 	
-	
-	
-
-
 	<script>
 		var nums = [10, 10];
-		setNum(0, 10);
-		setNum(1, 10);
 		
-		function setNum(id, add){
+		function addNum(id, add){
 			nums[id] += add;
-			document.getElementById("num" + id).innerHTML = nums[id];
+			document.getElementById("num" + id).value = nums[id];
 		}
-
+		function numUpdate(id, val){
+			nums[id] = parseInt(val);
+		}
 	</script>
-
-
-
 </body>
 </html>
