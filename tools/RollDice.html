@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>RollDice</title>
+	</head>
+	<body>
+		<div>
+			<input id="DiceNum" type="number" onclick="" value="1" />
+			<input id="RandNum" type="number" onclick="" value="6" />
+			<input id="Enter" type="button" onclick="ClickEnter()" value="Enter" />
+		</div>
+		<p id="output"> test</p>
+		<script>
+			function ClickEnter(){
+				var DiceNum = parseInt(document.getElementById("DiceNum").value);
+				var RandNum = parseInt(document.getElementById("RandNum").value);
+				
+				var rands = [];
+				var sum = 0;
+				
+				for(var i=0 ; i<DiceNum ; i++){
+					var num = getRandomInt(1, RandNum);
+					rands.push(num);
+					sum += num;
+				}
+				
+				var str = "Roll: " + DiceNum + "D" + RandNum + " => " + rands + " = " + sum;
+				console.log(str);
+				document.getElementById("output").innerHTML = str;
+			}
+			
+			function getRandomInt(min, max) {
+				min = Math.ceil(min);
+				max = Math.floor(max);
+				return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+			}
+		</script>
+	</body>
+</html>
