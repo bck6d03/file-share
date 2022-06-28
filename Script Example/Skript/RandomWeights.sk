@@ -1,0 +1,15 @@
+#根據權重array回傳隨機Index
+function randomIndexByWeights(weight:numbers) :: string:
+	#計算整個list的權重值加總
+	set {_weightsTotal} to 0
+	loop {_weight::*}:
+		add loop-value to {_weightsTotal}
+	#根據加總生成隨機數
+	set {_rand} to random number between 0 and {_weightsTotal}
+	#在做一次加總，但在每次相加時檢查相加後的數值是否比{_rand}大
+	set {_weightsTotal} to 0
+	loop {_weight::*}:
+		add loop-value to {_weightsTotal}
+		if {_rand} is less than {_weightsTotal}:
+			return loop-index
+	return "0"
