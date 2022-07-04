@@ -1,0 +1,19 @@
+aliases:
+	potion_items = potion, splash potion, lingering potion
+options:
+	PotionMaxStack:64
+on inventory click:
+	if cursor slot of player is potion_items:
+		if cursor slot of player is event-item:
+			cancel event
+			set {_amount} to item amount of event-item
+			add item amount of cursor slot of player to {_amount}
+			set {_item} to event-item
+			if {_amount} is more than {@PotionMaxStack}:
+				set {_amount2} to {_amount} - {@PotionMaxStack}
+				set {_amount} to {@PotionMaxStack}
+				set event-slot to {_amount2} of {_item}
+				set cursor slot of player to {_amount} of {_item}
+			else:
+				clear event-slot
+				set cursor slot of player to {_amount} of {_item}
