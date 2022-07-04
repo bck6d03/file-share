@@ -9,10 +9,10 @@ RandomWeights.sk
 ScoreboardTag_Value.sk
 使用ScoreboardTag存取變數的Function。現時只能存取number和string
 
-
-
-
-
+RideIronGolem.sk
+讓玩家可以騎乘和控制鐵魔像進行戰鬥，。
+主手控制桿，副手紅石方塊時，右鍵將兩者合成「鐵魔像控制器」。
+部份功能未完成，比如跳躍功能
 
 
 
