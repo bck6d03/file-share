@@ -1,0 +1,107 @@
+
+
+
+command /getcontrolitems:
+	permission: controlitems.get
+	permission message: &cSorry, but you don't have permission to execute this command!
+	executable by: players
+	trigger:
+#		give stick named "select stick" to player
+#		give stick named "move stick" to player
+		give stick named "target stick" to player
+		give stick named "tp stick" to player
+		give stick named "summon stick" to player
+
+
+
+
+on leftclick:
+	if player's tool is stick named "target stick":
+		cancel event
+		if event-entity's target is not player:
+			if event-entity's target is set:
+				Send "select %event-entity's target%" to player
+				set {control.%player%.select} to event-entity's target
+			else:
+				Send "not select entity" to player
+	
+	if player's tool is stick named "tp stick":
+		if {control.%player%.select} is set:
+			if {control.%player%.select} is dead:
+				Send "not select entity" to player
+			else:
+				Send "null target" to player
+				spawn zombie at location of {control.%player%.select}
+				set target of {control.%player%.select} to last spawned entity
+				kill last spawned entity
+				
+				
+
+on damage:
+	if attacker's tool is stick named "target stick":
+		cancel event
+	if attacker's tool is stick named "tp stick":
+		cancel event
+
+on rightclick:
+	if player's tool is stick named "select stick":
+#		if name of player's tool is "Shulker Box":
+		if event-entity's target is not player:
+			if event-entity's target is set:
+				Send "select %event-entity's target%" to player
+				set {control.%player%.select} to event-entity's target
+			else:
+				Send "not select entity" to player
+
+	if player's tool is stick named "target stick":
+		if {control.%player%.select} is set:
+			if {control.%player%.select} is dead:
+				Send "not select entity" to player
+			else if event-entity's target is set:
+				Send "target %event-entity's target%" to player
+				set target of {control.%player%.select} to event-entity's target
+			else if event-block is set:
+				Send "move %location of block%" to player
+				make {control.%player%.select} pathfind to location of block above with speed 1
+			else:
+				Send "not target" to player
+				
+
+	if player's tool is stick named "tp stick":
+		if {control.%player%.select} is set:
+			if {control.%player%.select} is dead:
+				Send "not select entity" to player
+			else:
+				Send "tp %location of block%" to player
+				teleport {control.%player%.select} to location of block above
+				
+	if player's tool is stick named "summon stick":	
+		if event-block is set:
+			Send "summon %location of block%" to player
+			spawn zombie at location of block above
+			set {_body} to last spawned entity
+			set helmet of last spawned entity to stone
+			add "{CanBreakDoors:1b}" to entity-nbt of last spawned entity
+#			add "{Silent:1}" to entity-nbt of last spawned entity
+
+			spawn squid at location of block above
+			add "{NoAI:1b}" to entity-nbt of last spawned entity
+#			add "{Size:1}" to entity-nbt of last spawned entity
+			apply invisibility to last spawned entity
+			
+			make last spawned entity ride {_body}
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			

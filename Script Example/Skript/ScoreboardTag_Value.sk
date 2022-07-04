@@ -1,0 +1,53 @@
+#用 scoreboard tag 存取number的function
+#sk reload ScoreboardTag_Value
+#保存變數進scoreboard tags
+function setTagValue(e: entity, tag: text, value: text):
+	loop scoreboard tags of {_e}:
+		if loop-value starts with "%{_tag}%:":
+			remove loop-value from scoreboard tags of {_e}
+			stop loop
+	add "%{_tag}%:%{_value}%" to scoreboard tags of {_e}
+
+#讀取變數從scoreboard tags
+function getTagValue(e: entity, tag: text) :: string:
+	loop scoreboard tags of {_e}:
+		if loop-value starts with "%{_tag}%:":
+			return last (length of loop-value - length of "%{_tag}%:") characters of loop-value
+
+#保存數字進scoreboard tags
+function setTagNumValue(e: entity, tag: text, value: number):
+	loop scoreboard tags of {_e}:
+		if loop-value starts with "%{_tag}%:":
+			remove loop-value from scoreboard tags of {_e}
+			stop loop
+	add "%{_tag}%:%{_value}%" to scoreboard tags of {_e}
+
+#讀取變數從scoreboard tags
+function getTagNumValue(e: entity, tag: text) :: number:
+	loop scoreboard tags of {_e}:
+		if loop-value starts with "%{_tag}%:":
+			set {_r1} to last (length of loop-value - length of "%{_tag}%:") characters of loop-value
+			set {_r2} to {_r1} parsed as number
+			if {_r2} is not set:
+				parse error is set:
+					broadcast "<red>Line 1 is invalid: %last parse error%"
+				else:
+					broadcast "<red>Please put an integer on line 1!"
+			return {_r2}
+
+#檢查是否有這個scoreboard tags
+function hasTagValue(e: entity, tag: text) :: boolean:
+	loop scoreboard tags of {_e}:
+		if loop-value starts with "%{_tag}%:":
+			return true
+	return false
+
+#刪除這個scoreboard tags
+function removeTagValue(e: entity, tag: text):
+	loop scoreboard tags of {_e}:
+		if loop-value starts with "%{_tag}%:":
+			remove loop-value from scoreboard tags of {_e}
+			stop loop
+	
+	
+	
