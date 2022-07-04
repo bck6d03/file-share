@@ -3,6 +3,9 @@
 ControlMobs.sk
 早期作品，用來測試手動控制mob 的行為
 
+PotionMaxStack.sk
+可以在物品UI手動堆疊藥水，無法在創造模式ＵＩ使用
+
 RandomWeights.sk
 根據權重array生成隨機結果的Function
 
