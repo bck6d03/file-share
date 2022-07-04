@@ -1,0 +1,161 @@
+
+#主手拿著控制桿，副手拿著紅石方塊，右鍵將兩者合成鐵魔像控制桿
+#被船騎乘的鐵魔像會無法向特定方向移動，現時無法解決。不過掉水中不會取消船的騎乘
+
+#Ｑ鍵開關自動攻擊
+
+#增加騎乘控制雪魔像，
+
+
+
+on load:
+	set {RIG.ControlItem} to stick named "鐵魔像控制桿"
+	set line 1 of lore of {RIG.ControlItem} to "<orange>右鍵騎乘鐵魔像"
+	set line 2 of lore of {RIG.ControlItem} to "<orange>騎乘鐵魔像時，右鍵指示移動／攻擊目標"
+	set line 3 of lore of {RIG.ControlItem} to "<orange>騎乘鐵魔像時，Ｑ鍵切換自動攻擊能力"
+	set line 4 of lore of {RIG.ControlItem} to "<orange>副手為空時，潛行右鍵可以拆除鐵魔像身上所有裝備"
+	set line 5 of lore of {RIG.ControlItem} to "<orange>副手為護甲時，潛行右鍵可將護甲裝備到鐵魔像"
+	
+
+	set {RIG.ControlItem2} to stick named "雪魔像控制桿"
+	set line 1 of lore of {RIG.ControlItem} to "<orange>右鍵騎乘雪魔像"
+	set line 2 of lore of {RIG.ControlItem} to "<orange>騎乘雪魔像時，右鍵指示移動／攻擊目標"
+	set line 3 of lore of {RIG.ControlItem} to "<orange>副手為空時，潛行右鍵可以拆除鐵魔像身上所有裝備"
+	set line 4 of lore of {RIG.ControlItem} to "<orange>副手為護甲時，潛行右鍵可將護甲裝備到鐵魔像"
+
+
+#有tag "stop auto attack"魔像無法自動攻擊
+on target:
+	if entity is iron golem:
+		#broadcast "%passenger of entity%"
+		if entity have scoreboard tag "stop auto attack":
+			#broadcast "%entity% -> %target%"
+			cancel event
+
+				
+				
+on rightclick:
+	if player's tool is {RIG.ControlItem}:
+		if player is riding iron golem:
+			#騎乘魔像時，使用控制桿
+			set {_golem} to vehicle of player
+			if player's target is set:
+				if player's target is not {_golem}:
+					#攻擊目標
+					set target of {_golem} to player's target
+			else if targeted block of player is set:
+				#移動到目標位置
+				delete target of {_golem}
+				make {_golem} pathfind to location of targeted block of player at speed 1
+			else:
+				#沒有任何目標，停止行動
+				delete target of {_golem}
+				Send "not target" to player
+		else:
+			#對魔像使用控制桿
+			if type of event-entity is iron golem:
+				set {_golem} to event-entity
+				if passenger of {_golem} is set:
+					send "it have rider" to player
+					stop
+				if player is sneaking:
+					#使用控制桿拆除裝備
+					if player's off hand tool is air:
+						drop helmet of {_golem}
+						drop chestplate of {_golem}
+						drop leg of {_golem}
+						drop boot of {_golem}
+						set helmet of {_golem} to air
+						set chestplate of {_golem} to air
+						set leg of {_golem} to air
+						set boot of {_golem} to air
+				
+					#為魔像裝備護甲
+					if player's off hand tool is helmet:
+						drop helmet of {_golem}
+						make {_golem} wear player's off hand tool
+						delete player's off hand tool
+					if player's off hand tool is chestplates:
+						drop chestplate of {_golem}
+						make {_golem} wear player's off hand tool
+						delete player's off hand tool
+					if player's off hand tool is leggings:
+						drop leg of {_golem}
+						make {_golem} wear player's off hand tool
+						delete player's off hand tool
+					if player's off hand tool is boots:
+						drop boot of {_golem}
+						make {_golem} wear player's off hand tool
+						delete player's off hand tool
+				
+				else:
+					#使用控制桿騎乘魔像
+					if player is not riding:
+						send "ride %{_golem}%" to player
+						make the player ride {_golem}
+						
+	#手製控制器
+	if player's off hand tool is a redstone block:
+		if player's tool is a lever:
+			set player's off hand tool to air
+			set player's tool to {RIG.ControlItem}
+			
+on left click:
+	if player's tool is {RIG.ControlItem}:
+		#一般魔像控制
+		if player is riding iron golem:
+			cancel event
+			set {_golem} to vehicle of player
+			
+on drop:
+	if event-item is {RIG.ControlItem}:
+		if player is riding iron golem:	
+			#魔像的自動攻擊開關
+			cancel event
+			set {_golem} to vehicle of player
+			if {_golem} have scoreboard tag "stop auto attack":
+				send "開啟自動攻擊" to player
+				remove "stop auto attack" from scoreboard tags of {_golem}
+			else:
+				send "關閉自動攻擊" to player
+				add "stop auto attack" to scoreboard tags of {_golem}
+
+on swap hand items:
+	if player's tool is {RIG.ControlItem}:
+		if player is riding iron golem:
+			cancel event
+			if vehicle of player is on ground:
+				#讓魔像跳躍
+				set {_golem} to vehicle of player
+				
+				set {_loc_phead} to vector of player's head location
+				set {_v_pforward} to vector from yaw player's yaw and pitch player's pitch
+				set {_distance} to 10
+				set {_v2dis} to vector (x of {_v_pforward} * {_distance}), 0, (z of {_v_pforward} * {_distance})
+				set {_v_loc} to {_loc_phead} ++ {_v2dis}
+	
+				set {_target} to location (x of {_v_loc}, y of {_v_loc}, z of {_v_loc})
+#				send "%{_target}%" to player
+				
+				push {_golem} upwards at speed 1
+				push {_golem} (direction from player to {_target}) at speed 0.5
+	
+on damage:
+	if victim is vehicle of attacker:
+		cancel event
+	
+	
+	
+command /RIG_GiveStick:
+	description: 給予玩家鐵魔像控制器
+	executable by: players
+	trigger:
+		give player {RIG.ControlItem}
+
+
+
+
+
+	
+	
+	
