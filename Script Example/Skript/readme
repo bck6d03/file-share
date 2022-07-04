@@ -1,1 +1,19 @@
 保存一些自己寫的skript
+
+ControlMobs.sk
+早期作品，用來測試手動控制mob 的行為
+
+RandomWeights.sk
+根據權重array生成隨機結果的Function
+
+ScoreboardTag_Value.sk
+使用ScoreboardTag存取變數的Function。現時只能存取number和string
+
+
+
+
+
+
+
+
+
