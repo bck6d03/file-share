@@ -1,4 +1,5 @@
-保存一些自己寫的skript
+主保存一些自己寫的skript
+另外亦收藏一些別人創作的skript
 
 ControlMobs.sk
 早期作品，用來測試手動控制mob 的行為
@@ -16,6 +17,16 @@ RideIronGolem.sk
 讓玩家可以騎乘和控制鐵魔像進行戰鬥，。
 主手控制桿，副手紅石方塊時，右鍵將兩者合成「鐵魔像控制器」。
 部份功能未完成，比如跳躍功能
+
+
+
+cooldown.sk
+create by FallenGundam
+用來做技能冷卻用的Function
+
+
+
+
 
 
 
