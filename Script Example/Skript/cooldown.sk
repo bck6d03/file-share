@@ -1,0 +1,21 @@
+#作者: FallenGundam
+#冷卻
+#> cooldown api
+#> @parm p player
+#> @parm type 技能變數名
+#> @parm cd 時間變數 (5 seconds)
+#> @return boolean
+function cooldown(p:player, type:text, cd:timespan) :: boolean:
+	if difference between now and {skillcd::%{_p}%::%{_type}%} is less than {_cd}:
+		set {_msgcd} to "%difference between {_cd} and difference between now and {skillcd::%{_p}%::%{_type}%}%"
+		send "&f[&6冷卻系統&f] &c冷卻時間剩餘 &f%timeformat({_msgcd})%" to {_p}
+		return false
+	else:
+		set {skillcd::%{_p}%::%{_type}%} to now
+		return true
+
+#example:
+#on right click:
+#	if name of player's tool is "好大一把槍":
+#		if cooldown(player,"槍",10 seconds) = true:
+#			shoot a wither skull from player at speed 1.5
