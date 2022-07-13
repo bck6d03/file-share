@@ -1,0 +1,330 @@
+#生物生成處理的skript
+#相關sk: RandomWeights.sk , 
+
+options:
+	#隨機生成mob用數值
+	gen_radius: 32
+	gen_minradius: 24
+	#存活時間
+	gen_box_life_time: 180
+	gen_wolf_life_time: 360
+	#生成的數量上限，實際數值*玩家人數
+	gen_box_count: 5
+	gen_wolf_count: 4
+	gen_monsters_count: 50
+	
+aliases:
+	#可以生成箱子的方塊
+	gen_land_forest = dirt, grass, coarse dirt
+	gen_land_stone = any stone
+	gen_land_chalet = plank
+	gen_land_city = any concrete, any terracotta, any glazed terracotta, nether brick
+	gen_land_factory = cobblestone, stone brick, any wool, any quartz
+	gen_land_underground = any stone, stone brick
+
+	gen_land_zombie = gen_land_forest, plank, gen_land_city, gen_land_factory, gen_land_underground
+	gen_land_zombie_boomer = gen_land_zombie
+	gen_land_zombie_armor = gen_land_zombie
+	gen_land_zombie_hunter = gen_land_zombie
+	gen_land_zombie_licker = gen_land_zombie
+	
+	gen_land_skeleton_sword = gen_land_zombie
+	gen_land_skeleton_axe = gen_land_zombie
+	gen_land_skeleton_bow = gen_land_zombie
+
+	gen_land_wolf = gen_land_zombie
+
+on load:
+	#生成權重
+	clear {gen_weight::*}
+	set {gen_weight::1} to 10		#1		box
+	set {gen_weight::2} to 100		#2		zombie
+	set {gen_weight::3} to 20		#3		zombie_boomer
+	set {gen_weight::4} to 10		#4		zombie_armor
+	set {gen_weight::5} to 20		#5		zombie_hunter
+	set {gen_weight::6} to 20		#6		zombie_licker
+	set {gen_weight::7} to 100		#7		skeleton_sword
+	set {gen_weight::8} to 50		#8		skeleton_axe
+	set {gen_weight::9} to 80		#9		skeleton_bow
+	set {gen_weight::10} to 10		#10		holowolf
+
+on join:
+    set {players.online} to number of all players
+on quit:
+    set {players.online} to number of all players
+
+#調試工具
+on rightclick:
+	if player's tool is nether star:
+		if player is sneaking:
+			send "kill all shulkers" to player
+			kill all shulkers 
+		else:
+			if event-block is set:
+#				spawnMob(block above event-block)
+#				spawnZombie(block above event-block, "6")
+#				spawnshulkerboxGround(block above event-block)
+				spawnWildWolf(block above event-block)
+			else:
+				if {cangen} is true:
+					set {cangen} to false
+				else:
+					set {cangen} to true
+				send "cangen: %{cangen}%" to player
+
+	if player's tool is stick:
+		send "%size of all wolves%, %size of all shulkers%" to player
+		loop all wolves:
+			send "%location of loop-entity%" to player
+		loop all shulkers:
+			send "%location of loop-entity%" to player
+#		set {_randid} to randomIndexByWeights({gen_weight::*})
+#		send {_randid} to player
+
+#	if player's tool is stick:
+#		if event-block is set:
+#			set {_test} to spawnLimitCheck(block above event-block, false, 1, block)
+#			send "%{_test}%" to player
+#			send "rand: %randomIndexByWeights({gen_weight::*})%" to player
+#			send "%size of loaded chunks of world "newcity"%" to player
+#			send "event-block type: %type of event-block%" to player
+#		else:
+#			send "last pos: %location of last spawned shulker%" to player
+
+#每tick找一個隨機玩家，在其四周找個隨機位置。如果那個位置能生成mob，那就生成
+every 1 tick:
+	if {cangen} is false:
+		stop
+	set {_player} to random player out of all players
+	if world of {_player} is not world "newcity":
+		stop
+	set {_center} to location of {_player}
+	set {_randX} to random number between {_center}'s x-coordinate + {@gen_radius} and {_center}'s x-coordinate - {@gen_radius}
+	set {_randY} to random number between {_center}'s y-coordinate + {@gen_radius} and {_center}'s y-coordinate - {@gen_radius}
+	set {_randZ} to random number between {_center}'s z-coordinate + {@gen_radius} and {_center}'s z-coordinate - {@gen_radius}
+	set {_world} to {_center}'s world
+	set {_loc} to location({_randX}, {_randY}, {_randZ}, {_world})
+	set {_block} to block at {_loc}
+	if distanceAllplayer({_block}'s location):
+		spawnMob({_block})
+
+#檢查所有玩家和生成位置的距離，接近任一玩家就禁止生成
+function distanceAllplayer(loc:location) :: boolean:
+	loop all players:
+		if distance between {_loc} and loop-player is less than {@gen_minradius}:
+			return false
+	return true
+
+#檢查生成限制
+function spawnLimitCheck(block: block, inwater: boolean, height: int, bType: object) :: boolean:
+#	水中生成限制
+	if {_inwater} is true:
+		set {_base} to water
+	else:
+		set {_base} to air
+#	生成空間/高度
+	set {_upblock} to {_block}
+	loop {_height} times:
+		if {_upblock} is not {_base}:
+			return false
+		set {_upblock} to block above {_upblock}
+#	檢查下方方塊種類
+	if block below {_block} is {_bType}:
+		return true
+	return false
+
+#根據權重隨機生成單位
+function spawnMob(block: block):
+	set {_randid} to randomIndexByWeights({gen_weight::*})
+	set {_y_coordinate} to y-coordinate of {_block}
+	if {_randid} is "1": #生成箱子
+		spawnshulkerboxGround({_block})
+	if {_randid} is "10": #生成野狼
+		if spawnLimitCheck({_block}, false, 2, gen_land_wolf) is true:
+			spawnWildWolf({_block})
+	else if {_y_coordinate} >= 50:
+		if {_randid} is "2": #zombie
+			if spawnLimitCheck({_block}, false, 2, gen_land_zombie) is true:
+				spawnZombie({_block}, "2")
+		else if {_randid} is "3": #boomer
+			if spawnLimitCheck({_block}, false, 2, gen_land_zombie_boomer) is true:
+				spawnZombie({_block}, "3")
+		else if {_randid} is "4": #armor
+			if spawnLimitCheck({_block}, false, 2, gen_land_zombie_armor) is true:
+				spawnZombie({_block}, "4")
+		else if {_randid} is "5": #hunter
+			if spawnLimitCheck({_block}, false, 2, gen_land_zombie_hunter) is true:
+				spawnZombie({_block}, "5")
+		else if {_randid} is "6": #smoker
+			if spawnLimitCheck({_block}, false, 2, gen_land_zombie_licker) is true:
+				spawnZombie({_block}, "6")
+	else if {_y_coordinate} <= 60:
+		if {_randid} is "7": #skeleton_sword
+			if spawnLimitCheck({_block}, false, 2, gen_land_skeleton_sword) is true:
+				spawnSkeleton({_block}, "7")
+		if {_randid} is "8": #skeleton_axe
+			if spawnLimitCheck({_block}, false, 2, gen_land_skeleton_axe) is true:
+				spawnSkeleton({_block}, "8")
+		if {_randid} is "9": #skeleton_bow
+			if spawnLimitCheck({_block}, false, 2, gen_land_skeleton_bow) is true:
+				spawnSkeleton({_block}, "9")
+
+#喪屍生成
+function spawnZombie(block: block, type: string):
+	#防止生成過量
+	set {_count} to {@gen_monsters_count} * {players.online}
+	if size of all monsters >= {_count}:
+		stop
+#	set {_spawnloc} to location of {_block}
+	spawn zombie at {_block} with nbt "{IsBaby:0}"
+	set {_mob} to last spawned zombie
+	if vehicle of {_mob} is set:
+		delete vehicle of {_mob}
+	
+	if {_type} is "2":
+		set {_item} to unbreakable leather helmet
+		dye {_item} dark green
+		set helmet of {_mob} to {_item}
+	if {_type} is "3":
+		set helmet of {_mob} to creeper head
+		setTagNumValue({_mob}, "zombie_boomer_burn", 0)
+	if {_type} is "4":
+		set helmet of {_mob} to unbreakable iron helmet
+	if {_type} is "5":
+		set {_item} to unbreakable leather helmet
+		dye {_item} black
+		set helmet of {_mob} to {_item}
+		setTagNumValue({_mob}, "zombie_hunter_reload", 0)
+	if {_type} is "6":
+		set {_item} to unbreakable leather helmet
+		dye {_item} orange
+		set helmet of {_mob} to {_item}
+		setTagNumValue({_mob}, "zombie_smoker_reload", 0)
+	set glowing of last spawned zombie to true
+
+#骷髏生成
+function spawnSkeleton(block: block, type: string):
+	#防止生成過量
+	set {_count} to {@gen_monsters_count} * {players.online}
+	if size of all monsters >= {_count}:
+		stop
+	spawn skeleton at {_block} with nbt "{IsBaby:0}"
+	set {_mob} to last spawned skeleton
+	if vehicle of {_mob} is set:
+		delete vehicle of {_mob}
+	
+	set {_helmet} to unbreakable leather helmet
+	dye {_helmet} gray
+	if {_type} is "7":
+		set helmet of {_mob} to {_helmet}
+		set tool of {_mob} to iron sword
+	if {_type} is "8":
+		set helmet of {_mob} to {_helmet}
+		set tool of {_mob} to iron axe
+	if {_type} is "9":
+		set helmet of {_mob} to {_helmet}
+		set tool of {_mob} to bow
+	set glowing of {_mob} to true
+
+#根據高度和下面的方塊改變箱子種類
+function spawnshulkerboxGround(block: block):
+	#防止生成過量
+	set {_count} to {@gen_box_count} * {players.online}
+	if size of all shulkers >= {_count}:
+		stop
+	set {_spawnloc} to location of {_block}
+	if y-coordinate of {_spawnloc} is more than 64:
+		if spawnLimitCheck({_block}, false, 1, gen_land_forest) is true:
+			spawnshulkerbox({_spawnloc}, 13, "drop_forest")
+		else if spawnLimitCheck({_block}, false, 1, gen_land_stone) is true:
+			spawnshulkerbox({_spawnloc}, 8, "drop_stone")
+		else if spawnLimitCheck({_block}, false, 1, gen_land_chalet) is true:
+			spawnshulkerbox({_spawnloc}, 1, "drop_chalet")
+		else if spawnLimitCheck({_block}, false, 1, gen_land_city) is true:
+			spawnshulkerbox({_spawnloc}, 11, "drop_city")
+		else if spawnLimitCheck({_block}, false, 1, gen_land_factory) is true:
+			spawnshulkerbox({_spawnloc}, 12, "drop_factory")
+		else if {_block} is air:
+			if block below {_block} is solid:
+				spawnshulkerbox({_spawnloc}, 10, "drop_default")
+	else:
+		if spawnLimitCheck({_block}, false, 1, gen_land_underground) is true:
+			spawnshulkerbox({_spawnloc}, 7, "drop_underground")
+		else if {_block} is air:
+			if block below {_block} is solid:
+				spawnshulkerbox({_spawnloc}, 10, "drop_default")
+
+#生成不會動的shulker當作寶箱，會在180秒之後自動消失
+function spawnshulkerbox(pos: location, color: int, tag: string):
+	set y-coordinate of {_pos} to y-coordinate of {_pos} - 0.5
+	spawn shulker at {_pos} with nbt "{Color:%{_color}%,Health:1,NoAI:1b,Silent:1b,Attributes:[{Name:""generic.max_health"",Base:1f}]}"
+	set {_mob} to last spawned shulker
+	add {_tag} to the scoreboard tags of {_mob}
+	set glowing of {_mob} to true
+	setTagNumValue({_mob}, "shulkerbox_lifetime", 180)
+
+#生成holo野狼
+function spawnWildWolf(loc: location):
+	#防止生成過量
+	set {_count} to {@gen_wolf_count} * {players.online}
+	if size of all wolves >= {_count}:
+		stop
+	set {_mob} to spawnRandHoloWolf({_loc})
+	set glowing of {_mob} to true
+	setTagNumValue({_mob}, "wolf_lifetime", {@gen_wolf_life_time})
+
+
+every 1 seconds:
+	#shulker寶箱的刪除計時器
+	loop all shulkers:
+		if hasTagValue(loop-entity, "shulkerbox_lifetime"):
+			set {_reload} to getTagNumValue(loop-entity, "shulkerbox_lifetime")
+			set {_reload} to {_reload} - 1
+			if {_reload} is less than 0:
+				delete loop-entity
+				continue
+			setTagNumValue(loop-entity, "shulkerbox_lifetime", {_reload})
+	
+	loop all wolves:
+		if owner of loop-entity is not set:
+			if hasTagValue(loop-entity, "wolf_lifetime"):
+				set {_reload} to getTagNumValue(loop-entity, "wolf_lifetime")
+				set {_reload} to {_reload} - 1
+				if {_reload} is less than 0:
+					delete loop-entity
+					continue
+				setTagNumValue(loop-entity, "wolf_lifetime", {_reload})
+
+
+
+
+
+
+
+
+
+
+
+
+#手動測試生成用function
+function mobgen(center: location, radius: number, minradius: number):
+	set {_index} to 100
+	broadcast "try to spawn shulker"
+	while {_index} is more than 0:
+		wait 1 tick
+		subtract 1 from {_index}
+		set {_randX} to random number between {_center}'s x-coordinate + {_radius} and {_center}'s x-coordinate - {_radius}
+		set {_randY} to random number between {_center}'s y-coordinate + {_radius} and {_center}'s y-coordinate - {_radius}
+		set {_randZ} to random number between {_center}'s z-coordinate + {_radius} and {_center}'s z-coordinate - {_radius}
+		set {_world} to {_center}'s world
+		set {_loc} to location({_randX}, {_randY}, {_randZ}, {_world})
+		set {_block} to block at {_loc}
+		if {_block} is air:
+			if distance between {_block} and {_center} is more than {_minradius}:
+				if block above {_block} is air:
+					if block below {_block} is solid:
+						broadcast "spawn shulker"
+						set y-coordinate of {_loc} to y-coordinate of {_loc} - 1
+						spawnshulkerbox({_loc}, 0, "wooden")
+						stop
+	broadcast "not find position to spawn shulker"

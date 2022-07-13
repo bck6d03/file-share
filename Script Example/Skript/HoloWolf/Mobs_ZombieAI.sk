@@ -1,0 +1,75 @@
+
+
+
+
+
+#Zombie ai
+#點燃時自爆
+#發射投射物，命中時將目標拉向自己
+#跳向攻擊目標
+
+
+#點燃時自爆
+on damage of zombie:
+	if damage cause is lava, fire or burning:
+		if hasTagValue(victim, "zombie_boomer_burn") is true:
+			set {_burning} to getTagNumValue(victim, "zombie_boomer_burn")
+			set {_burning} to {_burning} + 1
+			if {_burning} is more than 5:
+				create safe explosion of force 10 at victim
+				kill victim
+			setTagNumValue(victim, "zombie_boomer_burn", {_burning})
+
+
+every 10 tick:
+	loop all zombies:
+		if loop-entity's target is set:
+			#清除已不存在的target
+			if loop-entity's target is dead:
+				delete loop-entity's target 
+				continue
+			#發射投射物，命中時將目標拉向自己
+			if hasTagValue(loop-entity, "zombie_smoker_reload"):
+				set {_reload} to getTagNumValue(loop-entity, "zombie_smoker_reload")
+				set {_reload} to {_reload} - 1
+				if {_reload} is less than 0:
+					set {_reload} to 3
+					make loop-entity shoot snowball
+					set {_snowball} to last shot snowball
+					add "zombie_smoker_bullet" to scoreboard tags of {_snowball}
+					apply potion of slowness 10 without particles to loop-entity for 10 tick
+				setTagNumValue(loop-entity, "zombie_smoker_reload", {_reload})
+				
+			#跳向攻擊目標
+			if hasTagValue(loop-entity, "zombie_hunter_reload"):
+				set {_reload} to getTagNumValue(loop-entity, "zombie_hunter_reload")
+				set {_reload} to {_reload} - 1
+				if {_reload} is less than 0:
+					set {_reload} to 10
+					push the loop-entity up at speed 0.5
+					push the loop-entity forward at speed 1.5
+				setTagNumValue(loop-entity, "zombie_hunter_reload", {_reload})
+
+on damage:
+	#smoker投射物拉人
+	if event-projectile is snowball:
+		if event-projectile have scoreboard tag "zombie_smoker_bullet":
+			push the victim (direction from victim to attacker) at speed 1.5
+
+on projectile collide:
+	#防止smoker投射物射錯人
+	if event-projectile is snowball:
+		if event-projectile have scoreboard tag "zombie_smoker_bullet":
+			if event-entity is zombie:
+				cancel event
+
+
+
+
+
+
+
+
+
+
+

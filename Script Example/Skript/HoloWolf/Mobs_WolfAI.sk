@@ -1,0 +1,90 @@
+#相關sk: ScoreboardTag_Value.sk
+
+#狼AI處理，選擇用比較吃資源的方法處理生物行為
+every 10 tick:
+	loop all wolves:
+		if loop-entity's target is set:
+			set {_dis} to distance between loop-entity and loop-entity's target
+			if {_dis} is less than 4:
+				#距離太接近時遠離
+#				set {_fleeloc} to calFleePosition(loop-entity, target of loop-entity , 10)
+#				delete target of loop-entity
+#				make loop-entity pathfind to {_fleeloc} with speed 1
+				set loop-entity's generic movement speed attribute to 0.3
+			else if {_dis} is less than 10:
+				#停止移動，射擊目標
+				set loop-entity's generic movement speed attribute to 0
+				
+				set {_reload} to getTagNumValue(loop-entity, "wolf_shoot_reload")
+				if {_reload} is less than 0:
+					set {_reload} to 3
+					make loop-entity shoot arrow #snowball
+				else:
+					set {_reload} to {_reload} - 1
+				setTagNumValue(loop-entity, "wolf_shoot_reload", {_reload})
+				
+			else:
+				#接近目標
+				set loop-entity's generic movement speed attribute to 0.3
+		else:
+			set loop-entity's generic movement speed attribute to 0.3
+
+
+#生成自定義狼的 Function
+function spawnWolf(name: string, loc: location):
+	spawn wolf at {_loc}
+	set {_mob} to last spawned wolf
+	make {_mob} silent
+	set name of {_mob} to {_name}
+
+#防止狼傷害隊友
+on damage:
+	if attacker is wolf:
+		if owner of attacker is owner of victim:
+			cancel event
+
+#防止狼的投射物擊中隊友
+on projectile collide:
+	if event-projectile is arrow:
+		if event-projectile have scoreboard tag "wolf_bullet":
+			if owner of shooter of event-projectile is owner of event-entity:
+				cancel event
+
+
+
+
+
+
+
+#找一個逃跑位置，range是逃多遠
+function calFleePosition(self: entity, target: entity, range: number) :: location:
+	#自己的位置
+	set {_loc_self} to vector of {_self}'s location
+	#逃離對象的位置
+	set {_loc_target} to vector of {_target}'s location
+	
+	#目標減自己
+	set {_v1} to {_loc_self} -- {_loc_target}
+	#normalized化
+	set {_v1n} to normalized {_v1}
+	#加上range
+	set {_v2range} to vector (x of {_v1n} * {_range}), (y of {_v1n} * {_range}), (z of {_v1n} * {_range})
+	
+	#計算終點位置
+	set {_loc_end} to {_loc_self} ++ {_v2range}
+	
+	set {_world} to world of {_self}
+	set {_return} to location at (x of {_loc_end}), (y of {_loc_end}), (z of {_loc_end}) of {_world}
+	return {_return}
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+

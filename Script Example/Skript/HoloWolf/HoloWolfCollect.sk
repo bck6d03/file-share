@@ -1,0 +1,217 @@
+#基於hololive 2 材質包
+#相關sk: Mobs_WolfAI.sk
+#使用plugin: skript, SkBee
+
+
+#低機率生成帶有隨機名字的狼？
+#帶有特定名字的已馴服的狼會自動加入Holo收藏。
+
+#右鍵打開選單召喚那個名字的狼。
+#禁用骨頭馴服，改用蛋糕馴服，馴服狼時會自動加入Holo收藏。
+
+#每個玩家只能帶三隻狼。
+
+#５６個角色，名稱後面加上-1 ～ -26 : 能獲得特定服裝命名牌		
+#如果該名holoman skin只有4種 那麼後續編號都會是相同服裝
+#名稱後面加上-運動服: 能獲得運動會服裝命名牌
+
+#sk reload HoloWolfCollect
+options:
+	#狼的上限
+	wolflimit: 3
+
+command /mobswolftest:
+	executable by: players
+	trigger:
+		give {mobs.wolfbook} to player
+
+command /HWCrecount <player=%player%>:
+	executable by: players
+	trigger:
+		set {tame::%arg-1%.count} to 0	
+		
+on load:
+	set {mobs.wolfbook} to book named "Holo收藏"
+	set line 1 of lore of {mobs.wolfbook} to "右鍵打開召喚清單，召喚CD60秒，上限5。"
+	set line 2 of lore of {mobs.wolfbook} to "Shift + 右鍵狼將其回收"
+
+#	set {mobs.wolfnames::*} to "AZKi", "miko", "roboco", "sora", "suisei", "aki", "Haato", "matsuri", "mel", "aqua", "ayame", "choco", "shion", "subaru", "flare", "marine", "noel", "pekora", "rushia", "coco", "kanata", "luna", "towa", "watame", "aloe", "botan", "lamy", "nene", "polka", "chloe", "Iroha", "koyori", "laplus", "lui", "fubuki", "Korone", "mio", "okayu", "a chan", "Watson", "calli", "gura", "ina", "kiara", "irys", "baelz", "fauna", "kronii", "mumei", "sana", "lofi", "moona", "risu", "anya", "ollie" and "reine"
+#	set {mobs.wolfindexs::*} to 4, 18, 17, 3, 8, 8, 19, 12, 3, 7, 5, 6, 6, 17, 10, 13, 9, 17, 12, 11, 7, 9, 17, 6, 1, 9, 10, 26, 8, 4, 5, 1, 4, 4, 4, 11, 6, 6, 1, 9, 5, 6, 7, 8, 4, 2, 1, 6, 3, 4, 4, 6, 6, 4, 4 and 4
+
+	#合成
+	register new shaped recipe for {mobs.wolfbook} using air, emerald, air, emerald, book, emerald, air, emerald and air with id "holo_collect_book"
+	unlock recipe "smoking_cod" for all players
+    
+
+#set {_rand1} to random string out of {mobs.wolfnames::*}
+#set {_rand2} to random number out of {mobs.wolfindexs::*}
+#set {_name} to "%{_rand1}%-%{_rand2}%"
+
+on rightclick:
+	#使用召喚書
+	if player's tool is {mobs.wolfbook}:
+		cancel event
+		if player is sneaking:
+			if type of event-entity is wolf:
+				if owner of event-entity is player:
+					cancel event
+					delete event-entity
+					set {tame::%player%.count} to {tame::%player%.count} - 1
+		else:
+			openHWCGUI_main(player, 0)
+
+	if type of event-entity is wolf:
+		#禁用骨頭馴服
+		if player's tool is bone:
+			cancel event
+		#使用蛋糕馴服
+		if player's tool is cake:
+			cancel event
+			if owner of event-entity is not set:
+				if {tame::%player%.count} >= {@wolflimit}:
+					send "超過上限%{tame::%player%.count}%" to player
+				else if {tame::%player%.count} is less than 0:
+					set {tame::%player%.count} to 0
+				else:
+					remove cake from player
+					play wolf hearts on event-entity
+					tame event-entity to player
+					set {tame::%player%.count} to {tame::%player%.count} + 1
+					set {_spawnname} to name of event-entity
+					set {HWC.%player%.collect::%{_spawnname}%} to true
+	
+#死亡事件減少count
+on death of wolf:
+	if owner of victim is set:
+		set {_owner} to owner of victim
+		set {tame::%{_owner}%.count} to {tame::%{_owner}%.count} - 1
+
+on inventory click:
+	#主頁處理
+	if name of event-inventory contains "&6Holo收藏_page":
+		cancel event
+		#拿到頁數
+		set {_s::*} to name of event-inventory split at "-"
+		set {_page} to {_s::2} parsed as number#		send "page %{_page}%" to player
+		
+		#清單 0-44
+		set {_index} to index of event-slot
+		if {_index} >= 0:
+			if {_index} <= 44:
+				openHWCGUI_child(player, (({_index} + 1) + {_page} * 45))
+		
+		if index of event-slot is 45:
+			#send "back page" to player
+			if ({_page}) is more than 0:
+				openHWCGUI_main(player, ({_page} - 1))
+		if index of event-slot is 53:
+			#send "next page" to player
+			if ({_page}) is less than floor(size of {mobs.wolfnames::*} / 45):
+				openHWCGUI_main(player, ({_page} + 1))
+				
+	#分頁處理
+	if name of event-inventory contains "&6Holo收藏_child":
+		cancel event
+		#拿到角色name id
+		set {_s::*} to name of event-inventory split at "-"
+		set {_name} to {_s::2}
+		#清單 0-26
+		set {_index} to index of event-slot
+		if type of event-slot is not air:
+			if {_index} >= 0:
+				if {_index} <= 26:
+					set {_spawnname} to "%{_name}%-%({_index} + 1)%"
+					if event-clicktype is right mouse button:
+						if player is op:
+							send "op召喚野生 %{_spawnname}%" to player
+							spawnWildHoloWolf({_spawnname}, location of player)
+							
+					if event-clicktype is left mouse button:
+						if player is op:
+							send "op召喚 %{_spawnname}%" to player
+							spawnHoloWolf(player, {_spawnname}, location of player)
+						else:
+							if {HWC.%player%.collect::%{_spawnname}%} is true:
+								#召喚冷卻處理
+								set {_cooldown} to cooldownspan(player, "HWCsummon", 60 seconds)
+								if {_cooldown} is 0 seconds:
+									spawnHoloWolf(player, {_spawnname}, location of player)
+								else:
+									send "冷卻中，剩餘 &f%{_cooldown}%" to player
+							else:
+								send "未解鎖" to player
+
+#主選單
+function openHWCGUI_main(player:player, page:number):
+	set {_gui} to a new chest inventory with 6 row with name "&6Holo收藏_page-%{_page}%"
+	set {_slotIndex} to 0
+	set {_namesIndex} to ({_page} * 45) + 1
+	loop 45 times:
+		if {mobs.wolfnames::%{_namesIndex}%} is set:
+			set slot {_slotIndex} of {_gui} to Name Tag named "%{mobs.wolfnames::%{_namesIndex}%}%"
+		set {_slotIndex} to {_slotIndex} +1
+		set {_namesIndex} to {_namesIndex} +1
+		
+	set slot 45 of {_gui} to Name Tag named "Back page"
+	set slot 53 of {_gui} to Name Tag named "Next page"
+	open {_gui} to {_player}
+
+#子選單
+function openHWCGUI_child(player:player, namesId:number):
+	if {mobs.wolfnames::%{_namesId}%} is not set:
+		send "no id %{_namesId}%" to {_player}
+		stop
+	set {_gui} to a new chest inventory with 6 row with name "&6Holo收藏_child-%{mobs.wolfnames::%{_namesId}%}%"
+	set {_slotIndex} to 0
+	set {_namesIndex} to 1
+	loop {mobs.wolfindexs::%{_namesId}%} times:
+		set {_spawnname} to "%{mobs.wolfnames::%{_namesId}%}%-%{_namesIndex}%"
+		if {HWC.%{_player}%.collect::%{_spawnname}%} is true:
+			set slot {_slotIndex} of {_gui} to Name Tag named {_spawnname}
+		else:
+			set slot {_slotIndex} of {_gui} to Barrier named "未解鎖"
+		set {_slotIndex} to {_slotIndex} +1
+		set {_namesIndex} to {_namesIndex} +1
+	open {_gui} to {_player}
+
+#生成玩家的holo狼的 Function
+function spawnHoloWolf(player:player, name: string, loc: location):
+	if {tame::%{_player}%.count} >= {@wolflimit}:
+		send "超過上限%{tame::%{_player}%.count}%" to {_player}
+	else if {tame::%{_player}%.count} is less than 0:
+		set {tame::%{_player}%.count} to 0
+	else:
+		spawn wolf at {_loc}
+		set {_mob} to last spawned wolf
+		make {_mob} silent
+		set name of {_mob} to {_name}
+		setTagNumValue({_mob}, "wolf_shoot_reload", 0)
+		
+		tame {_mob} to {_player}
+		#馴服事件增加count
+		set {tame::%{_player}%.count} to {tame::%{_player}%.count} + 1
+
+#生成holo狼的 Function
+function spawnWildHoloWolf(name: string, loc: location):
+	spawn wolf at {_loc}
+	set {_mob} to last spawned wolf
+	make {_mob} silent
+	set name of {_mob} to {_name}
+	setTagNumValue({_mob}, "wolf_shoot_reload", 0)
+
+#生成隨機名字的野生holo狼的 Function，用來配合生成器
+function spawnRandHoloWolf(loc: location) :: entity:
+	set {_rand1} to random string out of {mobs.wolfnames::*}
+	set {_rand2} to random number out of {mobs.wolfindexs::*}
+	set {_name} to "%{_rand1}%-%{_rand2}%"
+	
+	spawn wolf at {_loc}
+	set {_mob} to last spawned wolf
+	make {_mob} silent
+	set name of {_mob} to {_name}
+	setTagNumValue({_mob}, "wolf_shoot_reload", 0)
+	return {_mob}
+
+
+
+
