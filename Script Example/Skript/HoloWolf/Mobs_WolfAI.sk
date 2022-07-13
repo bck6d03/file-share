@@ -1,5 +1,7 @@
 #相關sk: ScoreboardTag_Value.sk
 
+#使狼會遠距離射箭攻擊
+
 #狼AI處理，選擇用比較吃資源的方法處理生物行為
 every 10 tick:
 	loop all wolves:
