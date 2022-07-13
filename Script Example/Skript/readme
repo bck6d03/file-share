@@ -23,7 +23,7 @@ RideIronGolem.sk
 cooldown.sk
 create by FallenGundam
 用來做技能冷卻用的Function
-
+另外寫了一個直接回傳剩餘timespan的Function，方便自定義回傳訊息
 
 
 
