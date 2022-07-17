@@ -1,0 +1,41 @@
+#背刺攻擊處理
+
+
+#sk reload backstab.sk
+
+options:
+	backstab_lorename: 背刺
+
+
+#command /backstabtest : 
+#	description: "no"
+#	executable by: players
+#	trigger:
+#		set {_i} to iron sword
+#		set {_i} to addBackstabToItem({_i}, 10)
+#		set {_i} to addBackstabLoreToItem({_i}, 10, 1)
+#		give {_i} to player
+
+
+#背刺傷害
+on damage:
+	set {_backstab} to "backstab" tag of nbt of attacker's tool
+	if {_backstab} is set:
+		set {_at_forward} to vector from yaw attacker's yaw and pitch attacker's pitch
+		set {_vi_forward} to vector from yaw victim's yaw and pitch victim's pitch
+		
+		set {_angle} to angle between {_at_forward} and {_vi_forward}
+		if {_angle} is less than 45:
+			increase the damage by {_backstab}
+
+#為item增加背刺能力的tag
+function addBackstabToItem(item:item, damage:number) :: item:
+	add "{backstab:%{_damage}%}" to nbt of {_item}
+	return {_item}
+
+#回傳一個Lore
+function addBackstabLoreToItem(item:item, damage:number, line:number) :: item:
+	set line {_line} of lore of {_item} to "{@backstab_lorename} %{_damage}%"
+	return {_item}
+
+
