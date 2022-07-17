@@ -25,9 +25,9 @@ create by FallenGundam
 用來做技能冷卻用的Function
 另外寫了一個直接回傳剩餘timespan的Function，方便自定義回傳訊息
 
-
-
-
-
+backstab.sk
+簡單的武器背刺效果
+只要「攻擊者的面向」和「受害者的面向」相差角度小於45度就視為「背刺」
+背刺傷害會增加到damage之中，仍然會受到護甲影響
 
 
