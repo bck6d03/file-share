@@ -1,0 +1,17 @@
+#Example 自動資源壓縮
+on player pick up oak log:
+	wait 1 tick
+	loop all items in the player's inventory:
+		if loop-item is oak log:
+			#oak log -> compressed oak log
+			if name of loop-item is not set:
+				if loop-item is 64 oak log:
+					set loop-item to air
+					give oak log named "compressed oak log" to player
+				
+			#compressed oak log -> super compressed oak log
+			if name of loop-item is "compressed oak log":
+				if loop-item is 64 oak log:
+					set loop-item to air
+					give oak log named "super compressed oak log" to player
+          
