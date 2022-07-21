@@ -1,0 +1,34 @@
+#處理音效播放資訊
+#讀取字串組變成音效，這些音效會依次序和delay播放
+#例子：
+#	輸入的字串組，每個串代表一個音效：
+#	"{音效名}-{音量 volume}-{音高 pitch}-{延遲 delay ticks}"
+#	set {_soundgroup::*} to "entity.experience_orb.pickup-0.5-1-1" , "entity.experience_orb.pickup-1-0.5-5" and "entity.experience_orb.pickup-1-1-5"
+#	解析並輸出連串音效
+#	PlaySoundGroup(location of player, {_soundgroup::*})
+
+#sk reload SoundEffectGroup.sk
+
+#播放一組音效
+function PlaySoundGroup(loc:location, strlist:objects):
+	loop {_strlist::*}:
+		set {_sounddata::*} to SoundStringSplit(loop-value)
+		wait {_sounddata::4}
+		play sound {_sounddata::1} with volume {_sounddata::2} and pitch {_sounddata::3} at {_loc}
+
+#將字串解析為sk使用的音效數據
+function SoundStringSplit(soundstr:string) :: objects:
+	set {_sound::*} to {_soundstr} split at "-"
+	set {_sound::2} to {_sound::2} parsed as number					#volume
+	set {_sound::3} to {_sound::3} parsed as number					#pitch
+	set {_sound::4} to "%{_sound::4}% ticks" parsed as timespan		#timespan ticks
+	return {_sound::*}
+
+
+#測試用skript
+#on rightclick:
+#	if player's tool is jukebox:
+#		set {_soundgroup::*} to "entity.experience_orb.pickup-0.5-1-1" , "entity.experience_orb.pickup-1-0.5-5" and "entity.experience_orb.pickup-1-1-5"
+#		PlaySoundGroup(location of player, {_soundgroup::*})
+#		set {_sounddata::*} to SoundStringSplit({_soundgroup::1})
+#		send "%{_sounddata::*}%" to player
