@@ -1,17 +1,13 @@
 主要保存一些自己寫的skript
 另外亦收藏一些別人創作的skript
 
+
+
 ControlMobs.sk
 早期作品，用來測試手動控制mob 的行為
 
 PotionMaxStack.sk
 可以在物品UI手動堆疊藥水，無法在創造模式ＵＩ使用
-
-RandomWeights.sk
-根據權重array生成隨機結果的Function
-
-ScoreboardTag_Value.sk
-使用ScoreboardTag存取變數的Function。現時只能存取number和string
 
 RideIronGolem.sk
 讓玩家可以騎乘和控制鐵魔像進行戰鬥，。
@@ -19,6 +15,15 @@ RideIronGolem.sk
 部份功能未完成，比如跳躍功能
 
 
+
+功能性的Function：
+提供一些方便的功能，減少大量重複的sk代碼
+
+RandomWeights.sk
+根據權重array生成隨機結果的Function
+
+ScoreboardTag_Value.sk
+使用ScoreboardTag存取變數的Function。現時只能存取number和string
 
 cooldown.sk
 create by FallenGundam
@@ -29,6 +34,10 @@ backstab.sk
 簡單的武器背刺效果
 只要「攻擊者的面向」和「受害者的面向」相差角度小於45度就視為「背刺」
 背刺傷害會增加到damage之中，仍然會受到護甲影響
+
+SoundEffectGroup.sk
+根據指定的方式輸入字串表，就能輸出一組音效
+
 
 
 Example: 
