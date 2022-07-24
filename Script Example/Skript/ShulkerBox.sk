@@ -1,0 +1,89 @@
+#使用plugin: skript, SkBee
+
+#右鍵打開手持的界伏盒
+#問題：如果在打開的時候，有其他情況將界伏盒從主手丟棄／切換主手，大概會出現問題。
+#解決方案１：打開時先刪除掉原本的界伏盒？
+#解決方案２：使用loop檢查玩家主手物品，只要有任何變化就強制關閉
+
+#新問題：在打開界伏盒時觸發到其他東西打開另一個選單，會觸發on inventory close:嗎？
+#解：會先on inventory close，在打開新選單
+
+#右鍵打開處理界伏盒
+on rightclick:
+	if event-block is not set:
+		if player's tool is shulker box:
+			set {_gui} to a new chest inventory with 3 row with name name of player's tool
+			set {_nbt::*} to tag "BlockEntityTag;Items" of nbt of player's tool
+			loop {_nbt::*}:
+				#用item from nbt 語法將nbt轉成item
+				set {_item} to item from nbt loop-value
+				set {_slot} to tag "Slot" of loop-value
+				set slot {_slot} of {_gui} to {_item}
+			#將界伏盒打開時的狀態保存
+			set {openshulkerbox.%player%} to player's tool
+			#先移除原本的界伏盒，防止出錯
+#			set player's tool to air
+			open {_gui} to player
+			#一直檢查玩家的主手是否原樣
+			while {openshulkerbox.%player%} is set:
+				if player's tool is not {openshulkerbox.%player%}:
+					close player's inventory
+					send "手持物品錯誤" to player
+					stop loop
+				wait 1 tick
+
+#關閉界伏盒時更新手持的界伏盒
+on inventory close:
+	if {openshulkerbox.%player%} is set:
+		#載入界伏盒打開時的nbt compound狀態
+		set {_nbt} to nbt compound from {openshulkerbox.%player%}
+		#將修改後的物品寫入shulkerbox
+		set {_index} to 0
+		loop event-inventory's amount of slots times:
+			#提取這個slot的物品
+			set {_item} to slot {_index} of event-inventory
+			if {_item} is not air:
+				set {_itemnbt} to nbt compound of {_item}		#從這個slot的物品建立nbt compound
+				set tag "Slot" of {_itemnbt} to {_index}		#將Slot的值用tag補上去
+				add {_itemnbt} to {_itemnbts::*}				#加入到{_itemnbts::*} list中
+			add 1 to {_index}
+		set tag "tag;BlockEntityTag;Items" of {_nbt} to {_itemnbts::*}		#將更新過的物品list寫入
+		
+		set {_newshulkerbox} to item from nbt {_nbt}
+		
+		if player's tool is {openshulkerbox.%player%}:
+			set player's tool to {_newshulkerbox}
+		else:
+			#代表手持物品出錯，強制移除並重新給予界伏盒
+			remove {openshulkerbox.%player%} from player
+			give {_newshulkerbox} to player
+		delete {openshulkerbox.%player%}
+
+
+#打開手持的界伏盒時，阻止移動界伏盒
+on inventory click:
+	if {openshulkerbox.%player%} is set:
+		if event-item is shulker box:
+			cancel event
+
+#打開手持的界伏盒時，阻止將界伏盒丟棄
+On Drop:
+	if {openshulkerbox.%player%} is set:
+		if event-item is shulker box:
+			cancel event
+
+#打開手持的界伏盒時，阻止交換雙手
+on swap hand items:
+	if {openshulkerbox.%player%} is set:
+		if player's tool is shulker box:
+			cancel event
+
+#打開手持的界伏盒時，阻止切換工具
+on player tool change:
+	if {openshulkerbox.%player%} is set:
+		if player's tool is shulker box:
+			cancel event
+
+
+
+
