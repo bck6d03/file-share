@@ -1,3 +1,5 @@
+//自定義 Scape and Run: Parasites 的裝備合成
+
 //resource
 val vile_shell = <srparasites:vile_shell>;
 
