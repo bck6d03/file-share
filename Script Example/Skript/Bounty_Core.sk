@@ -18,7 +18,8 @@ on load:
 	set {bounty.timespans::*} to 30 minutes , 1 hour , 90 minutes and 2 hours
 	
 	# 物品表
-	set {bounty.items::*} to "iron ingot" , "copper ingot" , "gold ingot" and "netherite ingot"
+#	set {bounty.items::*} to "iron ingot" , "copper ingot" , "gold ingot" and "netherite ingot"
+	set {bounty.items::*} to ItemToStr(iron ingot) , ItemToStr(copper ingot) , ItemToStr(gold ingot) and ItemToStr(netherite ingot)
 	set {bounty.itemsrange::*} to vector(5,10,0) , vector(10,20,0) , vector(3,12,0) and vector(1,4,0)
 	
 	# 生物表
@@ -44,9 +45,9 @@ command /bountypapercreate:
 		set {rewards::*} to 6 gold ingot and 1 iron ingot
 		
 		give Bounty_CreateBountyPaper({_unix}, {_reqType::*}, {_reqTargets::*}, {reqNums::*}, {rewards::*}) to player
-		
 
-
+	
+	
 #手動更新
 on rightclick:
 	if player's tool is paper:
@@ -56,6 +57,17 @@ on rightclick:
 			Bounty_CheckBountyPaper(player, {_i})
 			#set player's tool to Bounty_UpdateBountyPaperLore(player's tool)
 			set player's tool to Bounty_UpdateBountyPaper_Player(player, tool of player)
+		
+		#測試用
+		set {_inum} to 6
+		set {_itype} to iron ingot named "test"
+		
+		set {_i} to {_inum} of {_itype}
+		send {_i} to player
+		
+
+			
+			
 
 #生成賞金紙
 function Bounty_CreateBountyPaper(unixtime:number, reqType:objects, reqTargets:objects, reqNums:objects, rewards:objects) :: item:
@@ -68,7 +80,14 @@ function Bounty_CreateBountyPaper(unixtime:number, reqType:objects, reqTargets:o
 	set int list tag "reqType" of {_nbt} to {_reqType::*}
 	set int tag "isBounty" of {_nbt} to 1
 	set int tag "unixtime" of {_nbt} to {_unixtime}
+#	set {_index} to 1
+#	loop {_reqTargets::*}:
+#		if {_reqType::%{_index}%} is 1:
+#			set {_reqTargetsList::%{_index}%} to Ite
+#		add 1 to {_index}
+#	set string list tag "reqTargets" of {_nbt} to {_reqTargetsList::*}
 	set string list tag "reqTargets" of {_nbt} to {_reqTargets::*}
+	
 	set int list tag "reqNums" of {_nbt} to {_reqNums::*}
 	loop {_reqNums::*}:
 		set {_reqCurrents::%loop-index%} to 0
@@ -91,7 +110,9 @@ function Bounty_CheckBountyPaper(p:player, i:item):
 	set {_nbt} to nbt compound of {_i}
 	
 	set {_unixtime} to int tag "unixtime" of {_nbt}
-	set {_reqTargets::*} to string list tag "reqTargets" of {_nbt}
+	set {_reqType::*} to int list tag "reqType" of {_nbt}
+	set {_reqTargetsStr::*} to string list tag "reqTargets" of {_nbt}
+	set {_reqTargets::*} to GetReqTargets({_reqType::*}, {_reqTargetsStr::*})
 	set {_reqNums::*} to int list tag "reqNums" of {_nbt}
 	set {_reqCurrents::*} to int list tag "reqCurrents" of {_nbt}
 	set {_itemnbts::*} to compound list tag "rewards" of {_nbt}
@@ -99,6 +120,7 @@ function Bounty_CheckBountyPaper(p:player, i:item):
 		set {_rewards::%loop-index%} to item from nbt loop-value
 	
 	send "%{_unixtime}%" to {_p}
+	send "%{_reqType::*}%" to {_p}
 	send "%{_reqTargets::*}%" to {_p}
 	send "%{_reqNums::*}%" to {_p}
 	send "%{_reqCurrents::*}%" to {_p}
@@ -111,7 +133,9 @@ function Bounty_UpdateBountyPaperLore(i:item) :: item:
 	set {_nbt} to nbt compound of {_i}
 	
 	set {_unixtime} to int tag "unixtime" of {_nbt}
-	set {_reqTargets::*} to string list tag "reqTargets" of {_nbt}
+	set {_reqType::*} to int list tag "reqType" of {_nbt}
+	set {_reqTargetsStr::*} to string list tag "reqTargets" of {_nbt}
+	set {_reqTargets::*} to GetReqTargets({_reqType::*}, {_reqTargetsStr::*})
 	set {_reqNums::*} to int list tag "reqNums" of {_nbt}
 	set {_reqCurrents::*} to int list tag "reqCurrents" of {_nbt}
 	set {_itemnbts::*} to compound list tag "rewards" of {_nbt}
@@ -198,16 +222,19 @@ on death:
 #玩家更新賞金紙資料
 function Bounty_UpdateBountyPaper_Player(p:player, i:item) :: item:
 	set {_nbt} to nbt compound of {_i}
-	set {_reqTargets::*} to string list tag "reqTargets" of {_nbt}
+	
+	set {_reqType::*} to int list tag "reqType" of {_nbt}
+	set {_reqTargetsStr::*} to string list tag "reqTargets" of {_nbt}
+	set {_reqTargets::*} to GetReqTargets({_reqType::*}, {_reqTargetsStr::*})
 	set {_reqNums::*} to int list tag "reqNums" of {_nbt}
 	set {_reqCurrents::*} to int list tag "reqCurrents" of {_nbt}
 	
 	set {_index} to 0
 	loop {_reqTargets::*}:
 		add 1 to {_index}
-		if {_p}'s inventory have SToIType({_reqTargets::%{_index}%}):
-			set {_reqCurrents::%{_index}%} to amount of SToIType({_reqTargets::%{_index}%}) in {_p}'s inventory
-		
+		if {_p}'s inventory have {_reqTargets::%{_index}%}:
+			set {_reqCurrents::%{_index}%} to amount of {_reqTargets::%{_index}%} in {_p}'s inventory
+			
 	set int list tag "reqCurrents" of {_nbt} to {_reqCurrents::*}
 	
 	set {_i} to Bounty_UpdateBountyPaperLore({_i})
@@ -238,8 +265,10 @@ function Bounty_OpenBountyBoard(p:player):
 	#每小時更新賞金板
 	if difference between now and {bounty.player.%{_p}%.boardlastupdate} is more than 1 hour:
 		#更新賞金板
+		set {_index} to 0
 		loop 9 times:
-			set {bounty.player.%{_p}%.boardinv::%loop-value - 1%} to Bounty_GenBountyPaper()
+			set {bounty.player.%{_p}%.boardinv::%{_index}%} to Bounty_GenBountyPaper()
+			add 1 to {_index}
 		set {bounty.player.%{_p}%.boardlastupdate} to now
 	
 	#打開賞金板介面
@@ -251,11 +280,12 @@ function Bounty_OpenBountyBoard(p:player):
 	open {_gui} to {_p}
 
 on inventory close:
-	if inventory name of player's current inventory is "賞金板":
+	if name of event-inventory is "賞金板":
 		set {_index} to 0
 		loop event-inventory's amount of slots times:
-			set {bounty.player.%{_p}%.boardinv::%{_index}%} to slot {_index} of event-inventory
+			set {bounty.player.%player%.boardinv::%{_index}%} to slot {_index} of event-inventory
 			add 1 to {_index}
+		send "%event-inventory%" to player
 			
 			
 
@@ -266,7 +296,8 @@ function Bounty_SubmitBountyPaper(p:player):
 	
 	set {_unixtime} to int tag "unixtime" of {_nbt}
 	set {_reqType::*} to int list tag "reqType" of {_nbt}
-	set {_reqTargets::*} to string list tag "reqTargets" of {_nbt}
+	set {_reqTargetsStr::*} to string list tag "reqTargets" of {_nbt}
+	set {_reqTargets::*} to GetReqTargets({_reqType::*}, {_reqTargetsStr::*})
 	set {_reqNums::*} to int list tag "reqNums" of {_nbt}
 	set {_reqCurrents::*} to int list tag "reqCurrents" of {_nbt}
 	set {_itemnbts::*} to compound list tag "rewards" of {_nbt}
@@ -288,14 +319,14 @@ function Bounty_SubmitBountyPaper(p:player):
 	set {_index} to 1
 	loop {_reqType::*}:
 		if {_reqType::%{_index}%} is 1:
-			remove {_reqNums::%{_index}%} of SToIType({_reqTargets::%{_index}%}) from {_p}'s inventory
+			remove {_reqNums::%{_index}%} of {_reqTargets::%{_index}%} from {_p}'s inventory
 		add 1 to {_index}
 		
 	#給予報酬
 	loop {_rewards::*}:
 		give loop-value to {_p}
 	set {_p}'s tool to air
-	
+	send "任務完成，你得到賞金" to {_p}
 	
 
 
@@ -308,6 +339,42 @@ function SToIType(str:string) :: item type:
 	return {_str} parsed as item type
 	
 	
+#item和item nbt compound互換
+#	set {_itemnbt} to full nbt compound of {_i}
+#	set {_i} to item from nbt {_itemnbt}
+
+function ItemToComp(i:item) :: nbt compound:
+	return full nbt compound of {_i}
+	
+function CompToItem(itemnbt:nbt compound) :: item:
+	return item from nbt {_itemnbt}
+
+
+
+#item和字串經item nbt compound互換
+function ItemToStr(i:item) :: string:
+	set {_itemnbt} to full nbt compound of {_i}
+	return "%{_itemnbt}%"
+	
+function StrToItem(str:string) :: item:
+	set {_itemnbt} to nbt compound of {_str}
+	return item from nbt {_itemnbt}
+
+
+
+#	set {_reqType::*} to int list tag "reqType" of {_nbt}
+#	set {_reqTargets::*} to string list tag "reqTargets" of {_nbt}
+#解釋使用純字串保存的reqTargets，根據reqType轉換成相應的格式
+function GetReqTargets(reqType:objects, reqTargets:objects) :: objects:
+	set {_index} to 1
+	loop {_reqType::*} :
+		if {_reqType::%{_index}%} is 1:
+			set {_reqTargetsReturn::%{_index}%} to StrToItem({_reqTargets::%{_index}%})
+		if {_reqType::%{_index}%} is 2:
+			set {_reqTargetsReturn::%{_index}%} to {_reqTargets::%{_index}%}
+		add 1 to {_index}
+	return {_reqTargetsReturn::*}
+
 
 
 function QTypeStr1(t:number) :: string:
