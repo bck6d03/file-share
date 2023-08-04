@@ -29,8 +29,10 @@ on load:
 	#報酬表
 	set {bounty.rewards::*} to gold ingot and iron ingot
 	set {bounty.rewardsrange::*} to vector(4,16,0) , vector(4,16,0) and vector(4,8,0)
-
-
+	
+	#每次更新時自動重置時間
+	loop all players:
+		delete {bounty.player.%loop-value%.boardlastupdate}
 
 
 #bounty系統
@@ -57,13 +59,6 @@ on rightclick:
 			Bounty_CheckBountyPaper(player, {_i})
 			#set player's tool to Bounty_UpdateBountyPaperLore(player's tool)
 			set player's tool to Bounty_UpdateBountyPaper_Player(player, tool of player)
-		
-		#測試用
-		set {_inum} to 6
-		set {_itype} to iron ingot named "test"
-		
-		set {_i} to {_inum} of {_itype}
-		send {_i} to player
 		
 
 			
@@ -364,7 +359,7 @@ function StrToItem(str:string) :: item:
 
 #	set {_reqType::*} to int list tag "reqType" of {_nbt}
 #	set {_reqTargets::*} to string list tag "reqTargets" of {_nbt}
-#解釋使用純字串保存的reqTargets，根據reqType轉換成相應的格式
+#解析使用純字串保存的reqTargets，根據reqType轉換成相應的格式
 function GetReqTargets(reqType:objects, reqTargets:objects) :: objects:
 	set {_index} to 1
 	loop {_reqType::*} :
