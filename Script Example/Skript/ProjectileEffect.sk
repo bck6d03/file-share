@@ -1,0 +1,175 @@
+#相關sk: ScoreboardTag_Value.sk
+#使用plugin: skript, SkBee, SkQuery, skript-reflect
+
+#研究各種和投射物相關的實用效果
+
+
+
+#測試用工具
+command /projectileTest:
+	description: 給予玩家測試物品
+	executable by: players
+	trigger:
+		give player bow named "反射弓"
+
+
+
+
+
+#測試投射物，使箭變成直線飛行
+on shoot:
+	if event-projectile is arrow:
+		if shooter's tool is bow named "反射弓":
+			set {_nbt} to nbt compound of event-projectile
+			#增加自定nbt CMotion rebound
+			add nbt compound of "{custom:{CMotion:[0.0,0.0,0.0],rebound:5,stop:0}}" to {_nbt}
+			#提取移動向量
+			set {_motion::*} to double list tag "Motion" of {_nbt}
+	#		set {_vstartmotion} to vector({_motion::1}, {_motion::2}, {_motion::3})
+			set {_vmotion} to vector({_motion::1}, {_motion::2}, {_motion::3})
+			set double list tag "custom;CMotion" of {_nbt} to {_motion::*}
+
+			loop 1200 times:
+				if tag "custom;stop" of {_nbt} is 1:
+					stop
+				#提取 CMotion，更新Motion
+				set {_nbt} to nbt compound of event-projectile
+				set {_vmotion::*} to double list tag "custom;CMotion" of {_nbt}
+				set double list tag "Motion" of {_nbt} to {_vmotion::*}
+				wait 1 tick
+
+
+
+
+#測試投射物擊中方塊反彈
+on projectile hit:
+	if event-projectile is arrow:
+		set {_nbt} to nbt compound of event-projectile
+		set {_rebound} to int tag "custom;rebound" of {_nbt} 
+		if {_rebound} is more than 1:
+			if victim is set:
+				set tag "custom;stop" of {_nbt} to 1
+				
+			remove 1 from {_rebound}
+			set tag "custom;rebound" of {_nbt} to {_rebound}
+			
+			if event.getHitBlockFace() is set:
+				set {_hitBlockFace} to event.getHitBlockFace()
+			
+			set {_pi} to 3.14159265359
+			
+			#提取移動向量
+			set {_motion::*} to double list tag "Motion" of {_nbt}
+			set {_vmotion} to vector({_motion::1}, {_motion::2}, {_motion::3})
+			set {_inputVector} to {_vmotion}
+			#提取投射物所在的block位置　
+			set {_loc.proj} to event-projectile's location
+			set {_loc.projold} to {_loc.proj} ~ vector({_motion::1} * -1, {_motion::2} * -1, {_motion::3} * -1)
+			set {_loc.projnew} to {_loc.proj} ~ {_vmotion}
+			
+			set {_b.proj} to block at {_loc.proj}
+			set {_bloc.proj} to {_b.proj}'s location
+			#提取命中的block位置
+			set {_bloc.hit} to event-block's location
+			
+			set {_bv.proj} to vector of {_bloc.proj}
+			set {_bv.hit} to  vector of {_bloc.hit}
+			
+			#面向轉vector
+			if "%{_hitBlockFace}%" is "up":
+				set {_vector90} to vector 0, 1, 0
+			if "%{_hitBlockFace}%" is "down":
+				set {_vector90} to vector 0, -1, 0
+			if "%{_hitBlockFace}%" is "east":
+				set {_vector90} to vector 1, 0, 0
+			if "%{_hitBlockFace}%" is "west":
+				set {_vector90} to vector -1, 0, 0
+			if "%{_hitBlockFace}%" is "south":
+				set {_vector90} to vector 0, 0, 1
+			if "%{_hitBlockFace}%" is "north":
+				set {_vector90} to vector 0, 0, -1
+				
+			set {_vector90} to normalized {_vector90} #用來做鏡像的向量
+			set {_vector90rev} to {_vector90} ** vector(-1,-1,-1)
+#			send "%{_vector90}% %{_vmotion}%" to shooter
+			
+			set {_angle} to angle between {_inputVector} and {_vector90rev} #{_inputVector}.angle({_vector90}) * 180/{_pi}
+			set {_length} to 2 * vector length of {_inputVector}
+			set {_length} to {_length} * cos({_angle})
+			set {_vector90l} to {_vector90} ** vector({_length},{_length},{_length})
+#			set {_vector90} to {_vector90} normalized ** {_length}
+#			send "%{_angle}% %{_inputVector}% %{_vector90l}% %{_length}%" to shooter
+			
+			#投射物以block位置為中心的鏡像位置
+			set {_mirror1} to MirroredLocation({_loc.proj} , {_loc.projnew})
+			#set {_mirror1} to MirroredLocation({_loc.projold} , {_loc.proj})
+			set {_mirror2} to {_mirror1} ~ {_vector90l}      #Offset a location by a vector : %location% ~ %vector%
+			set {_VectorRebound} to vector x-coordinate of {_mirror2} - x-coordinate of {_loc.projnew}, y-coordinate of {_mirror2} - y-coordinate of {_loc.projnew}, z-coordinate of {_mirror2} - z-coordinate of {_loc.projnew}
+			
+			set {_newmotion::*} to x of {_VectorRebound} , y of {_VectorRebound} and z of {_VectorRebound}
+			
+			wait 1 tick
+			teleport event-projectile to event-projectile ~ {_vector90}
+			teleport event-projectile to event-projectile ~ ({_vector90} ** vector(0.5,0.5,0.5))
+#			set double list tag "Motion" of {_nbt} to {_newmotion::*}
+			set double list tag "custom;CMotion" of {_nbt} to {_newmotion::*}
+
+
+
+
+
+
+
+#計算以loc2為中心，loc1的鏡像位置
+function MirroredLocation(loc1:location, loc2:location) :: location:
+	set {_dis} to distance between {_loc1} and {_loc2}
+	set {_vloc1} to vector of {_loc1}
+	set {_vloc2} to vector of {_loc2}
+	
+	set {_v} to {_vloc2} -- {_vloc1}
+	set {_v} to normalized {_v}
+	set {_vdis} to vector({_dis} * 2, {_dis} * 2, {_dis} * 2)
+	set {_voffset} to {_v} ** {_vdis}
+	
+	set {_loc1m} to {_loc1} ~ {_voffset}
+	return {_loc1m}
+
+
+
+
+#比較點的位置和方塊的六個面的位置？
+#function GetFace(loc:location, b:block) :: string:
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+	#提取投射物射線hit的block face
+	#set {_ray} to ray trace from {_loc.proj} along {_vmotion} with max distance 1
+	#set {_face} to ray trace hit blockface of {_ray}
+	#send "%{_face}%" to shooter
+	#Ｘ有機會回傳錯誤或者null
+
+
+
+
+
+
+
+
+
+
+
