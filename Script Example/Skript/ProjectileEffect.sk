@@ -1,6 +1,7 @@
 #相關sk: ScoreboardTag_Value.sk
 #使用plugin: skript, SkBee, SkQuery, skript-reflect
 
+#sk reload ProjectileEffect.sk
 #研究各種和投射物相關的實用效果
 
 
@@ -10,33 +11,84 @@ command /projectileTest:
 	description: 給予玩家測試物品
 	executable by: players
 	trigger:
+		set {_e} to GetTarget(zombie and wolf, player, 16)
+		send "%{_e}%" to player
 		give player bow named "反射弓"
 
 
 
+#生成帶有投射物相關nbt的工具
+function projectileTool(i:item, noGravity:integer, rebound:integer, :integer) :: item:
+	set {_nbt} to nbt compound of {_i}
+	add nbt compound of "{noGravity:0,rebound:0,}" to {_nbt}
+	return {_i}
 
 
-#測試投射物，使箭變成直線飛行
+
+#CMotion: 自定位移向量
+#noGravity: 0=沒有效果, 1=移除投射物重力,只使用CMotion控制移動方向
+#rebound: 撞牆反彈次數
+#track;type: 追蹤模式 0=無 , 1=只追蹤目標 , 2=自動鎖定追蹤距離內的實體
+#track;range: 追蹤距離
+#track;angle: 追蹤強度
+#Ｘtrack;target:[] 追蹤目標的uuid
+#Ｘtrack;autotargets:[] 自動鎖定的實體種類
+
+#stop: 設為1使CMotion loop 中止
+
 on shoot:
+	#測試投射物，使箭變成直線飛行
 	if event-projectile is arrow:
 		if shooter's tool is bow named "反射弓":
 			set {_nbt} to nbt compound of event-projectile
 			#增加自定nbt CMotion rebound
-			add nbt compound of "{custom:{CMotion:[0.0,0.0,0.0],rebound:5,stop:0}}" to {_nbt}
+			add nbt compound of "{custom:{CMotion:[0.0,0.0,0.0],noGravity:1,rebound:5,stop:0}}" to {_nbt}
+			add nbt compound of "{custom:{track:{type:1,range:12,angle:0.5}}}" to {_nbt}
 			#提取移動向量
 			set {_motion::*} to double list tag "Motion" of {_nbt}
 	#		set {_vstartmotion} to vector({_motion::1}, {_motion::2}, {_motion::3})
 			set {_vmotion} to vector({_motion::1}, {_motion::2}, {_motion::3})
 			set double list tag "custom;CMotion" of {_nbt} to {_motion::*}
+			
+			#追蹤相關數值
+			set {_track.type} to 1
+			set {_track.range} to 12
+			set {_track.angle} to 0.5
+			#{_track.target}
 
 			loop 1200 times:
+				set {_nbt} to nbt compound of event-projectile	
 				if tag "custom;stop" of {_nbt} is 1:
 					stop
+				
+				#追蹤處理
+				if tag "custom;track;type" of {_nbt} is 1:
+					set {_projloc} to event-projectile's location
+					if {_target} is not set:
+						set {_target} to GetTarget((zombie and wolf), {_projloc}, {_track.range})
+					if {_target} is set:
+						set {_projv} to vector of {_projloc}
+						set {_tarv} to vector of {_target}'s location
+						
+						set {_motion::*} to double list tag "custom;CMotion" of {_nbt}
+						set {_vstart} to vector({_motion::1}, {_motion::2}, {_motion::3})
+						set {_vend} to ({_tarv} -- {_projv}) normalized
+						
+						set {_v} to VectorSlerp({_vstart}, {_vend}, {_track.angle})
+						set {_trackmoction::*} to x of {_v} , y of {_v} and z of {_v}
+						set double list tag "custom;CMotion" of {_nbt} to {_trackmoction::*}
+					
 				#提取 CMotion，更新Motion
-				set {_nbt} to nbt compound of event-projectile
-				set {_vmotion::*} to double list tag "custom;CMotion" of {_nbt}
-				set double list tag "Motion" of {_nbt} to {_vmotion::*}
+				if tag "custom;noGravity" of {_nbt} is 1:
+					set {_vmotion::*} to double list tag "custom;CMotion" of {_nbt}
+					set double list tag "Motion" of {_nbt} to {_vmotion::*}
 				wait 1 tick
+	
+	
+	
+	
+	
+	
 
 
 
@@ -109,10 +161,12 @@ on projectile hit:
 			set {_newmotion::*} to x of {_VectorRebound} , y of {_VectorRebound} and z of {_VectorRebound}
 			
 			wait 1 tick
-			teleport event-projectile to event-projectile ~ {_vector90}
+#			teleport event-projectile to event-projectile ~ {_vector90}
 			teleport event-projectile to event-projectile ~ ({_vector90} ** vector(0.5,0.5,0.5))
-#			set double list tag "Motion" of {_nbt} to {_newmotion::*}
-			set double list tag "custom;CMotion" of {_nbt} to {_newmotion::*}
+			if tag "custom;noGravity" of {_nbt} is 1:
+				set double list tag "custom;CMotion" of {_nbt} to {_newmotion::*}
+			else:
+				set double list tag "Motion" of {_nbt} to {_newmotion::*}
 
 
 
@@ -136,40 +190,26 @@ function MirroredLocation(loc1:location, loc2:location) :: location:
 
 
 
-
-#比較點的位置和方塊的六個面的位置？
-#function GetFace(loc:location, b:block) :: string:
+function VectorSlerp(start:vector, end:vector, percent:number) :: vector:
+	set {_dot} to {_start} dot {_end}
+	#set {_dot} to Clamp({_dot}, -1.0, 1.0)
+	set {_theta} to acos({_dot}) * {_percent}
+	set {_RelativeVec} to {_end} -- ({_start} ** vector({_dot},{_dot},{_dot}))
+	set {_RelativeVec} to {_RelativeVec} normalized
 	
-	
-	
-	
-	
-	
-	
-	
-	
+	set {_costheta} to cos({_theta})
+	set {_sintheta} to sin({_theta})
+	set {_A} to {_start} ** vector({_costheta},{_costheta},{_costheta})
+	set {_B} to {_RelativeVec} ** vector({_sintheta},{_sintheta},{_sintheta})
+	return {_A} ++ {_B}
 
 
 
+function GetTarget(etypes:objects, loc:location, range:number) :: entity:
+#	broadcast "%{_etypes::*}%"
+	set {_target::*} to all entities of types {_etypes::*} in radius {_range} around {_loc}
+	return {_target::1}
 
-
-
-
-
-
-	#提取投射物射線hit的block face
-	#set {_ray} to ray trace from {_loc.proj} along {_vmotion} with max distance 1
-	#set {_face} to ray trace hit blockface of {_ray}
-	#send "%{_face}%" to shooter
-	#Ｘ有機會回傳錯誤或者null
-
-
-
-
-
-
-
-
-
+#sk reload ProjectileEffect.sk
 
 
