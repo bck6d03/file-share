@@ -79,14 +79,14 @@ on shoot:
 			#追蹤處理
 			if tag "custom;track;type" of {_nbt} is 1:
 				set {_projloc} to event-projectile's location
+				set {_motion::*} to double list tag "custom;CMotion" of {_nbt}
+				set {_vmotion} to vector({_motion::1}, {_motion::2}, {_motion::3})
 				if {_target} is not set:
-					set {_target} to GetTarget((zombie and wolf), {_projloc}, {_track.range})
+					set {_target} to GetTarget((zombie and wolf), {_vmotion}, {_projloc}, {_track.range})
 				if {_target} is set:
 					set {_projv} to vector of {_projloc}
 					set {_tarv} to vector of {_target}'s location
 					
-					set {_motion::*} to double list tag "custom;CMotion" of {_nbt}
-					set {_vmotion} to vector({_motion::1}, {_motion::2}, {_motion::3})
 					set {_vlength} to length of {_vmotion}
 					set {_vstart} to {_vmotion} normalized
 					set {_vend} to ({_tarv} -- {_projv}) normalized
@@ -245,10 +245,20 @@ function RotateTowards(start:vector, end:vector, maxDegreesDelta:number) :: vect
 		return {_end}
 	return VectorSlerp({_start}, {_end}, min(1.0, {_maxDegreesDelta} / {_angle}))
 
-
-function GetTarget(etypes:objects, loc:location, range:number) :: entity:
-	set {_target::*} to all entities of types {_etypes::*} in radius {_range} around {_loc}
-	return {_target::1}
+#
+function GetTarget(etypes:objects, loc:location, motion:vector, range:number) :: entity:
+	set {_targets::*} to all entities of types {_etypes::*} in radius {_range} around {_loc}
+	#計算［射程內生物與投射物的向量］和［投射物移動向量］之間的角度，選擇其中最小的值
+	set {_vloc} to vector of {_loc}
+	set {_min_angle} to 360
+	loop {_targets::*}:
+		set {_vtarget} to vector of loop-value's location
+		set {_vA} to ({_vtarget} -- {_vloc}) normalized
+		set {_angle} to angle between {_vA} and {_motion}
+		if {_angle} is less than {_min_angle}:
+			set {_min_angle} to {_angle}
+			set {_returntarget} to loop-value
+	return {_returntarget}
 
 #sk reload ProjectileEffect.sk
 
