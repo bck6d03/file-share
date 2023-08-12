@@ -87,7 +87,10 @@ on shoot:
 					set {_target} to GetTarget((zombie and wolf), {_projloc}, {_vmotion}, {_track.range}, {_track.angle})
 				if {_target} is set:
 					set {_projv} to vector of {_projloc}
-					set {_tarv} to vector of {_target}'s location
+					if {_target}'s head location is set:
+						set {_tarv} to vector of {_target}'s head location
+					else:
+						set {_tarv} to vector of {_target}'s location
 					
 					set {_vlength} to vector length of {_vmotion}
 					set {_vstart} to {_vmotion} normalized
