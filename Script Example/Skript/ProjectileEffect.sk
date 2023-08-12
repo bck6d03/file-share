@@ -10,7 +10,8 @@
 #rebound: 撞牆反彈次數
 #track;type: 追蹤模式 0=無 , 1=只追蹤目標 , 2=自動鎖定追蹤距離內的實體
 #track;range: 追蹤距離
-#track;angle: 追蹤強度
+#track;power: 追蹤強度
+#track;angle: 追蹤角度
 #Ｘtrack;target:[] 追蹤目標的uuid
 #Ｘtrack;autotargets:[] 自動鎖定的實體種類
 
@@ -30,10 +31,10 @@ command /projectileTest:
 
 
 #生成帶有投射物相關nbt的工具
-function projectileTool(i:item, noGravity:integer, rebound:integer, tracktype:integer, trackrange:integer, trackangle:number) :: item:
+function projectileTool(i:item, noGravity:integer, rebound:integer, tracktype:integer, trackrange:integer, trackangle:number, trackpower:number) :: item:
 	set {_nbt} to nbt compound of {_i}
 	add nbt compound of "{noGravity:%{_noGravity}%,rebound:%{_rebound}%}" to {_nbt}
-	add nbt compound of "{track:{type:%{_tracktype}%,range:%{_trackrange}%,angle:%{_trackangle}%}}" to {_nbt}
+	add nbt compound of "{track:{type:%{_tracktype}%,range:%{_trackrange}%,angle:%{_trackangle}%,power:%{_trackpower}%}}" to {_nbt}
 	return {_i}
 
 
@@ -47,7 +48,7 @@ on shoot:
 		if shooter's tool is bow named "追蹤弓":
 			set {_nbt} to nbt compound of event-projectile
 			CustomProjectile(event-projectile, 1, 0)
-			CustomProjectile_Track(event-projectile, 1, 12, 0.1)
+			CustomProjectile_Track(event-projectile, 1, 24, 30, 5)
 
 on shoot:
 	#需要 1 tick 讓投射物數據在發射時寫入物件？
@@ -69,6 +70,7 @@ on shoot:
 		set {_track.type} to int tag "custom;track;type" of {_nbt}
 		set {_track.range} to int tag "custom;track;range" of {_nbt}
 		set {_track.angle} to tag "custom;track;angle" of {_nbt}
+		set {_track.power} to tag "custom;track;power" of {_nbt}
 		#{_track.target}
 
 		loop 1200 times:
@@ -82,16 +84,16 @@ on shoot:
 				set {_motion::*} to double list tag "custom;CMotion" of {_nbt}
 				set {_vmotion} to vector({_motion::1}, {_motion::2}, {_motion::3})
 				if {_target} is not set:
-					set {_target} to GetTarget((zombie and wolf), {_vmotion}, {_projloc}, {_track.range})
+					set {_target} to GetTarget((zombie and wolf), {_projloc}, {_vmotion}, {_track.range}, {_track.angle})
 				if {_target} is set:
 					set {_projv} to vector of {_projloc}
 					set {_tarv} to vector of {_target}'s location
 					
-					set {_vlength} to length of {_vmotion}
+					set {_vlength} to vector length of {_vmotion}
 					set {_vstart} to {_vmotion} normalized
 					set {_vend} to ({_tarv} -- {_projv}) normalized
 					
-					set {_v} to RotateTowards({_vstart}, {_vend}, {_track.angle}) ** vector({_vlength},{_vlength},{_vlength})
+					set {_v} to RotateTowards({_vstart}, {_vend}, {_track.power}) ** vector({_vlength},{_vlength},{_vlength})
 					if {_v} is vector(0,0,0):
 						set {_v} to {_vend}
 					set {_trackmoction::*} to x of {_v} , y of {_v} and z of {_v}
@@ -203,9 +205,9 @@ function CustomProjectile(proj:entity, noGravity:integer=0, rebound:integer=0) :
 	add nbt compound of "{custom:{cProjectile:1,noGravity:%{_noGravity}%,rebound:%{_rebound}%}}" to {_nbt}
 	return {_projectile}
 
-function CustomProjectile_Track(proj:entity, type:integer=0, range:integer=12, angle:number=0.5) :: entity:
+function CustomProjectile_Track(proj:entity, type:integer=0, range:integer=12, angle:number=90, power:number=5) :: entity:
 	set {_nbt} to nbt compound of {_proj}
-	add nbt compound of "{custom:{cProjectile:1,track:{type:%{_type}%,range:%{_range}%,angle:%{_angle}%}}}" to {_nbt}
+	add nbt compound of "{custom:{cProjectile:1,track:{type:%{_type}%,range:%{_range}%,angle:%{_angle}%,power:%{_power}%}}}" to {_nbt}
 	return {_projectile}
 
 
@@ -246,11 +248,11 @@ function RotateTowards(start:vector, end:vector, maxDegreesDelta:number) :: vect
 	return VectorSlerp({_start}, {_end}, min(1.0, {_maxDegreesDelta} / {_angle}))
 
 #
-function GetTarget(etypes:objects, loc:location, motion:vector, range:number) :: entity:
+function GetTarget(etypes:objects, loc:location, motion:vector, range:number, max_angle:number=90) :: entity:
 	set {_targets::*} to all entities of types {_etypes::*} in radius {_range} around {_loc}
 	#計算［射程內生物與投射物的向量］和［投射物移動向量］之間的角度，選擇其中最小的值
 	set {_vloc} to vector of {_loc}
-	set {_min_angle} to 360
+	set {_min_angle} to {_max_angle}
 	loop {_targets::*}:
 		set {_vtarget} to vector of loop-value's location
 		set {_vA} to ({_vtarget} -- {_vloc}) normalized
