@@ -44,10 +44,10 @@ on shoot:
 	if event-projectile is arrow:
 		if shooter's tool is bow named "反射弓":
 			set {_nbt} to nbt compound of event-projectile
-			CustomProjectile(event-projectile, 1, 5)
+			CustomProjectile(event-projectile, 400, 1, 5)
 		if shooter's tool is bow named "追蹤弓":
 			set {_nbt} to nbt compound of event-projectile
-			CustomProjectile(event-projectile, 1, 0)
+			CustomProjectile(event-projectile, 400, 1, 0)
 			CustomProjectile_Track(event-projectile, 1, 24, 30, 5)
 
 on shoot:
@@ -60,6 +60,8 @@ on shoot:
 		add nbt compound of "{custom:{CMotion:[0.0,0.0,0.0],stop:0}}" to {_nbt}
 	#	add nbt compound of "{custom:{noGravity:1,rebound:5}}" to {_nbt}
 	#	add nbt compound of "{custom:{track:{type:1,range:12,angle:0.5}}}" to {_nbt}
+		#基本投射物數值
+		set {_lifeTick} to int tag "custom;lifeTick" of {_nbt}
 		#提取移動向量
 		set {_motion::*} to double list tag "Motion" of {_nbt}
 	#	set {_vstartmotion} to vector({_motion::1}, {_motion::2}, {_motion::3})
@@ -72,8 +74,8 @@ on shoot:
 		set {_track.angle} to tag "custom;track;angle" of {_nbt}
 		set {_track.power} to tag "custom;track;power" of {_nbt}
 		#{_track.target}
-
-		loop 1200 times:
+		
+		loop {_lifeTick} times:
 			set {_nbt} to nbt compound of event-projectile	
 			if tag "custom;stop" of {_nbt} is 1:
 				stop
@@ -107,19 +109,6 @@ on shoot:
 				set {_vmotion::*} to double list tag "custom;CMotion" of {_nbt}
 				set double list tag "Motion" of {_nbt} to {_vmotion::*}
 			wait 1 tick
-		
-		
-		broadcast
-		
-	
-
-
-	
-	
-	
-	
-
-
 
 
 
@@ -203,15 +192,15 @@ on projectile hit:
 
 
 #寫入自定投射物的相關nbt
-function CustomProjectile(proj:entity, noGravity:integer=0, rebound:integer=0) :: entity:
+function CustomProjectile(proj:entity, lifeTick:integer=400, noGravity:integer=0, rebound:integer=0) :: entity:
 	set {_nbt} to nbt compound of {_proj}
-	add nbt compound of "{custom:{cProjectile:1,noGravity:%{_noGravity}%,rebound:%{_rebound}%}}" to {_nbt}
-	return {_projectile}
+	add nbt compound of "{custom:{cProjectile:1,lifeTick:%{_lifeTick}%,noGravity:%{_noGravity}%,rebound:%{_rebound}%}}" to {_nbt}
+	return {proj}
 
 function CustomProjectile_Track(proj:entity, type:integer=0, range:integer=12, angle:number=90, power:number=5) :: entity:
 	set {_nbt} to nbt compound of {_proj}
 	add nbt compound of "{custom:{cProjectile:1,track:{type:%{_type}%,range:%{_range}%,angle:%{_angle}%,power:%{_power}%}}}" to {_nbt}
-	return {_projectile}
+	return {proj}
 
 
 
