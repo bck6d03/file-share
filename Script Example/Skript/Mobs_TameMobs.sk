@@ -1,0 +1,348 @@
+#相關sk: ScoreboardTag_Value.sk
+#使用plugin: skript, SkBee, SkQuery, skript-reflect
+
+#使原版狼的Tame能力適用給任意mob
+
+import:
+	org.bukkit.entity.EntityType
+
+command /tamemobs <string>:
+	description: 給予玩家測試槍械
+	executable by: players
+	trigger:
+		if arg-1 is "give":
+		give player {TameMobs.tameitem}
+
+on load:
+	#set {TameMobs.tameable::*} to "zombie", "husk", "drowned", "skeleton", "spider", "cave spider", "enderman", "endermite", "blaze", "magma cube", "normal guardian", "pillager", "vindicator", "piglin", "zombie pigman", "chicken", "cow", "red mooshroom", "goat", "normal brown panda", "pig", "red fox", "bee", "axolotl", "hoglin" and "snowman"
+	
+#	set {TameMobs.tameable::*} to EntityType.ZOMBIE, EntityType.ZOMBIE_VILLAGER, EntityType.HUSK, EntityType.DROWNED, EntityType.SKELETON, EntityType.SPIDER, EntityType.CAVE_SPIDER, EntityType.ENDERMAN, EntityType.ENDERMITE, EntityType.BLAZE, EntityType.MAGMA_CUBE, EntityType.GUARDIAN, EntityType.PILLAGER, EntityType.VINDICATOR, EntityType.PIGLIN, EntityType.PIGLIN_BRUTE, EntityType.ZOMBIFIED_PIGLIN, EntityType.CHICKEN, EntityType.COW, EntityType.SHEEP, EntityType.GOAT, EntityType.PIG, EntityType.FOX, EntityType.BEE, EntityType.AXOLOTL, EntityType.HOGLIN, EntityType.PANDA, EntityType.IRON_GOLEM and EntityType.SNOWMAN
+	
+	#victim is of types {TameMobs.tameable::*}
+	
+	set {TameMobs.tameitem} to cake named "馴服用物品"
+
+#檢查一個生物可否馴服
+function TM_CanTame(e:entity) :: boolean:
+	if {_e} is Mob:
+		#為防止衝突，不影響原版可以馴服的生物
+		if {_e} is Tameable:
+			return false
+		if {_e} is monster:
+			if {_e} is EnderDragon, Wither, Illusioner or Spellcaster:
+				return false
+			if "%{_e}%" is "creeper":
+				return false
+			if {_e} is Ghast, Guardian, Vex or Giant:
+				return false
+			#Warden
+			return true
+		if {_e} is animal:
+			return true
+		if {_e} is Golem:
+			if {_e} is Shulker:
+				return false
+			return true
+	return false
+
+#================================================玩家互動
+on rightclick:
+	#把怪物馴服
+	if player's tool is {TameMobs.tameitem}:
+		if event-entity is not player:
+			if TM_CanTame(event-entity) is true:
+				TM_TameEntity(event-entity, player)
+				if player is not op:
+					remove {TameMobs.tameitem} from player
+				send "馴服了 %event-entity%" to player
+			else:
+				send "這個生物 %event-entity% 不能馴服" to player
+		stop
+
+	#空手右鍵生物互動
+	if player's tool is air:
+		if TM_CanTame(event-entity) is true:
+			set {_owner} to TM_GetOwner(event-entity)
+			if {_owner} is set:
+				set {_nbt} to nbt compound of event-entity
+				send "%{_nbt}%" to player
+				if player is sneaking:
+					OpenTameMobGUI(event-entity, player)
+				else:
+					#切換Follow功能
+					if tag "custom;Tame;Follow" of {_nbt} is 1:
+						set tag "custom;Tame;Follow" of {_nbt} to 0
+					else:
+						set tag "custom;Tame;Follow" of {_nbt} to 1
+					set {_send} to tag "custom;Tame;Follow" of {_nbt}
+					send "Follow %{_send}%" to player
+
+on leftclick:
+	#把馴服怪物殺死
+	if player's tool is {TameMobs.tameitem}:
+		if target of player is not player:
+			set {_owner} to TM_GetOwner(target of player)
+			if {_owner} is set:
+				kill target of player
+
+#測試豬人用
+#on piglin spawn:
+#	set {_nbtcomp} to nbt compound of event-entity
+#	set tag "PersistenceRequired" of {_nbtcomp} to false
+#	set tag "IsImmuneToZombification" of {_nbtcomp} to true
+
+
+#================================================基本設定
+#把一個生物馴服
+function TM_TameEntity(e:entity, owner:player) :: entity:
+	set {_nbt} to nbt compound of {_e}
+	#設定Owner uuid
+	set {_u} to uuid int array as string from {_owner}
+	add nbt compound of "{custom:{Tame:{Owner:%{_u}%,Follow:1,TrackRange:16,CanSearchEnemy:0}}}" to {_nbt}
+#	set {_uuid::*} to uuid int array of {_owner}
+#	broadcast "%{_uuid::*}%"
+#	set int array tag "custom;Tame;Owner" of {_nbt} to {_uuid::*}
+	set nbt compound of {_e} to {_nbt}
+	return {_e}
+
+#使用nbt uuid 找到 Tame;Owner
+function TM_GetOwner(e:entity) :: entity:
+	set {_nbt} to nbt compound of {_e}
+	set {_uuid::*} to int array tag "custom;Tame;Owner" of {_nbt}
+	loop all players:
+#		broadcast "%uuid int array of loop-player% is %{_uuid::*}%"
+		if "%uuid int array of loop-player%" is "%{_uuid::*}%":
+			return loop-player
+	return {_null}
+
+#================================================傷害保護
+on damage:
+	#防止傷害隊友
+	if TM_SameTeamOrOwner(attacker, victim):
+		cancel event
+		stop
+	#玩家傷害生物時，四周的馴服怪物一起攻擊
+	if attacker is player:
+		if victim is not player:
+			loop all entities in radius 8 around attacker:
+				set {_loop_owner} to TM_GetOwner(loop-entity)
+				if {_loop_owner} is attacker:
+					TM_SetTarget(loop-entity, victim)
+					#set loop-entity's target to victim
+	#玩家被攻擊時，四周的馴服怪物反擊
+	if victim is player:
+		loop all entities in radius 8 around victim:
+			set {_loop_owner} to TM_GetOwner(loop-entity)
+			if {_loop_owner} is victim:
+				TM_SetTarget(loop-entity, attacker)
+				#set loop-entity's target to attacker
+
+#防止投射物擊中隊友
+on projectile collide:
+	if TM_SameTeamOrOwner(shooter of event-projectile, event-entity):
+		cancel event
+
+#檢查是否同Team或者有相同的所有者
+function TM_SameTeamOrOwner(mobA: entity, mobB: entity) :: boolean:
+	if TM_SameTeam({_mobA}, {_mobB}):
+		return true
+	if TM_SameOwner({_mobA}, {_mobB}):
+		return true
+	return false
+
+#檢查是否有相同的所有者
+function TM_SameOwner(mobA: entity, mobB: entity) :: boolean:
+	set {_owner_A} to TM_GetOwner({_mobA})
+	set {_owner_B} to TM_GetOwner({_mobB})
+	if {_owner_A} is not set:
+		return false
+	if {_owner_A} is {_owner_B}:
+		return true
+	return false
+	
+#檢查是否同Team。
+function TM_SameTeam(mobA: entity, mobB: entity) :: boolean:
+	set {_teamA} to team of {_mobA}
+	set {_teamB} to team of {_mobB}
+	if {_teamA} is not set:
+		return false
+	if {_teamA} is {_teamB}:
+		return true
+	return false
+	
+
+#================================================索敵和追隨處理
+every 20 tick:
+	loop all Mobs:
+		if TM_CanTame(loop-entity) is true:
+			set {_owner} to TM_GetOwner(loop-entity)
+			if {_owner} is set:
+				if loop-entity's target is set:
+					#超過追擊距離，強制中斷攻擊並返回
+					set {_nbt} to nbt compound of loop-entity
+					set {_dis} to distance between loop-entity and {_owner}
+					set {_track_dis} to tag "custom;Tame;TrackRange" of {_nbt}
+					if {_dis} is more than {_track_dis}:
+						TM_SetTarget(loop-entity, {_null})
+						set path target of loop-entity to {_owner}
+		#				teleport loop-entity to {_owner}
+				else:
+					TM_Follow(loop-entity, {_owner})
+					TM_SearchEnemy(loop-entity, {_owner})
+
+#生物追隨主人
+function TM_Follow(mob: entity, owner: entity):
+	if {_owner} is not set:
+		stop
+	set {_dis} to distance between {_mob} and {_owner}
+	#距離外才追隨移動
+	if {_dis} is more than 8:
+		if target of {_mob} is not set:
+#			if path target of {_mob} is not set:
+			set path target of {_mob} to {_owner}
+	#距離太遠直接傳送
+	if {_dis} is more than 32:
+		if {_owner} is on ground:
+			teleport {_mob} to {_owner}
+
+#消除原本的主動索敵能力，保留反擊和自定索敵的target通道
+on target:
+	set {_owner} to TM_GetOwner(event-entity)
+	if {_owner} is set:
+		if event-entity has metadata value "CustomTarget":
+			#target是owner和相同owner的場合cancel
+			if "%type of target%" is "player":
+				if name of target is {_owner}:
+					cancel event
+			else:
+				set {_tar_owner} to TM_GetOwner(target)
+				if {_tar_owner} is {_owner}:
+					cancel event
+			clear metadata value "CustomTarget" of event-entity
+		else:
+			cancel event
+
+#檢索半徑內的實體
+function TM_SearchEnemy(mob: entity, p:player):
+	set {_nbt} to nbt compound of {_mob}
+	set {_enable} to tag "custom;Tame;CanSearchEnemy" of {_nbt}
+	if {_enable} is 1:
+		set {_radius} to 24
+		set {_track_dis} to tag "custom;Tame;TrackRange" of {_nbt}
+		set {_close} to {_radius}
+		loop all entities in radius {_radius} of {_mob}:
+			#迴避相同owner的生物
+			if TM_SameTeamOrOwner({_mob}, loop-entity) is true:
+				continue
+			#可以成為target的實體種類
+			if loop-entity is a monster:
+				set {_dis} to distance between {_mob} and loop-entity
+				set {_dis2} to distance between {_p} and loop-entity
+				if {_dis} is less than {_close}:
+					if {_dis2} is less than {_track_dis}:
+						set {_close} to {_dis}
+						#set {_mob}'s target to loop-entity
+						set {_target} to loop-entity
+		if {_target} is set:
+			TM_SetTarget({_mob}, {_target})
+
+
+#利用NBT設定piglin的攻擊目標
+function TM_SetTarget(mob:entity, target:entity):
+	if {_mob} is piglin:
+		set {_piglin_nbt} to nbt compound of {_mob}
+		if {_target} is set:
+			set {_u} to uuid int array as string from {_target}
+			set {_n} to nbt compound from "{Brain:{memories:{""minecraft:angry_at"":{ttl:10000L,value:%{_u}%}}}}"
+		else:
+			#delete tag "Brain;memories" of {_piglin_nbt}
+			set {_n} to nbt compound from "{Brain:{memories:{""minecraft:angry_at"":{ttl:1L,value:[I;0,0,0,0]}}}}"
+			#set {_n} to nbt compound from "{Brain:{memories:{}}}"
+		add {_n} to {_piglin_nbt}
+		set metadata value "CustomTarget" of {_mob} to true
+	else:
+		#直接用skript set mob's target 不會觸發on target事件
+		set {_mob}'s target to {_target}
+
+
+#================================================生物換裝處理
+#打開換裝介面
+function OpenTameMobGUI(e:entity, p:player):
+	if TM_CanTame({_e}) is false:
+		stop
+	set {_gui} to a new chest inventory with 1 row with name uuid of {_e}
+	set slot 0 of {_gui} to helmet of {_e}
+	set slot 1 of {_gui} to chestplate of {_e}
+	set slot 2 of {_gui} to leg of {_e}
+	set slot 3 of {_gui} to boot of {_e}
+	set slot 4 of {_gui} to tool of {_e}
+	set slot 5 of {_gui} to offhand tool of {_e}
+	set slot 6 of {_gui} to green wool named "<white>切換Follow功能"
+	set slot 7 of {_gui} to green wool named "<white>切換CanSearchEnemy功能"
+	set slot 8 of {_gui} to green wool named "<white>空"
+	open {_gui} to {_p}
+	set {TameMobs.openGUI::%{_p}%} to {_e}
+
+#點擊時變更生物裝備，功能按鈕
+on inventory click:
+	if {TameMobs.openGUI::%player%} is set:
+		set {_e} to {TameMobs.openGUI::%player%}
+		if name of event-inventory is uuid of {_e}:
+			if type of event-inventory is chest inventory:
+				set {_nbt} to nbt compound of {_e}
+				if index of event-slot is more than -1:
+					if index of event-slot is less than 6:
+						wait 1 tick
+						set helmet of {_e} to slot 0 of event-inventory
+						set chestplate of {_e} to slot 1 of event-inventory
+						set leg of {_e} to slot 2 of event-inventory
+						set boot of {_e} to slot 3 of event-inventory
+						set tool of {_e} to slot 4 of event-inventory
+						set offhand tool of {_e} to slot 5 of event-inventory
+						
+				if index of event-slot is 6:
+					#切換Follow功能
+					if tag "custom;Tame;Follow" of {_nbt} is 1:
+						set tag "custom;Tame;Follow" of {_nbt} to 0
+					else:
+						set tag "custom;Tame;Follow" of {_nbt} to 1
+					set {_send} to tag "custom;Tame;Follow" of {_nbt}
+					send "Follow %{_send}%" to player
+					cancel event
+				if index of event-slot is 7:
+					#切換CanSearchEnemy功能
+					if tag "custom;Tame;CanSearchEnemy" of {_nbt} is 1:
+						set tag "custom;Tame;CanSearchEnemy" of {_nbt} to 0
+						TM_SetTarget({_e}, {_null})
+					else:
+						set tag "custom;Tame;CanSearchEnemy" of {_nbt} to 1
+					set {_send} to tag "custom;Tame;CanSearchEnemy" of {_nbt}
+					send "CanSearchEnemy %{_send}%" to player
+					cancel event
+				if index of event-slot is 8:
+					cancel event
+
+#關閉時變更生物裝備
+on inventory close:
+	if {TameMobs.openGUI::%player%} is set:
+		set {_e} to {TameMobs.openGUI::%player%}
+		set helmet of {_e} to slot 0 of event-inventory
+		set chestplate of {_e} to slot 1 of event-inventory
+		set leg of {_e} to slot 2 of event-inventory
+		set boot of {_e} to slot 3 of event-inventory
+		set tool of {_e} to slot 4 of event-inventory
+		set offhand tool of {_e} to slot 5 of event-inventory
+		delete {TameMobs.openGUI::%player%}
+
+
+
+
+
+
+
+
+
+
+
+
+
