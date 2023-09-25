@@ -1,25 +1,25 @@
 #相關sk: ScoreboardTag_Value.sk
 #使用plugin: skript, SkBee, SkQuery, skript-reflect
 
-#使原版狼的Tame能力適用給任意mob
+#Mobs_TameMobs.sk
+#自定義馴服生物
+#＞通過使用指定道具可以把生物馴服
+#＞可馴服的生物種類可以在 TM_CanTame 自行修改
+#＞空手右鍵馴服生物：切換Follow功能
+#＞shift+空手右鍵馴服生物：打開裝備＋功能選單
+
 
 import:
 	org.bukkit.entity.EntityType
 
 command /tamemobs <string>:
-	description: 給予玩家測試槍械
+	description: 
 	executable by: players
 	trigger:
 		if arg-1 is "give":
 		give player {TameMobs.tameitem}
 
 on load:
-	#set {TameMobs.tameable::*} to "zombie", "husk", "drowned", "skeleton", "spider", "cave spider", "enderman", "endermite", "blaze", "magma cube", "normal guardian", "pillager", "vindicator", "piglin", "zombie pigman", "chicken", "cow", "red mooshroom", "goat", "normal brown panda", "pig", "red fox", "bee", "axolotl", "hoglin" and "snowman"
-	
-#	set {TameMobs.tameable::*} to EntityType.ZOMBIE, EntityType.ZOMBIE_VILLAGER, EntityType.HUSK, EntityType.DROWNED, EntityType.SKELETON, EntityType.SPIDER, EntityType.CAVE_SPIDER, EntityType.ENDERMAN, EntityType.ENDERMITE, EntityType.BLAZE, EntityType.MAGMA_CUBE, EntityType.GUARDIAN, EntityType.PILLAGER, EntityType.VINDICATOR, EntityType.PIGLIN, EntityType.PIGLIN_BRUTE, EntityType.ZOMBIFIED_PIGLIN, EntityType.CHICKEN, EntityType.COW, EntityType.SHEEP, EntityType.GOAT, EntityType.PIG, EntityType.FOX, EntityType.BEE, EntityType.AXOLOTL, EntityType.HOGLIN, EntityType.PANDA, EntityType.IRON_GOLEM and EntityType.SNOWMAN
-	
-	#victim is of types {TameMobs.tameable::*}
-	
 	set {TameMobs.tameitem} to cake named "馴服用物品"
 
 #檢查一個生物可否馴服
@@ -333,16 +333,3 @@ on inventory close:
 		set tool of {_e} to slot 4 of event-inventory
 		set offhand tool of {_e} to slot 5 of event-inventory
 		delete {TameMobs.openGUI::%player%}
-
-
-
-
-
-
-
-
-
-
-
-
-
