@@ -55,6 +55,10 @@ on rightclick:
 	#把怪物馴服
 	if player's tool is {TameMobs.tameitem}:
 		if event-entity is not player:
+			set {_owner} to TM_GetOwner(event-entity)
+			if {_owner} is set:
+				send "這個生物 %event-entity% 已被 %{_owner}% 馴服" to player
+				stop
 			if TM_CanTame(event-entity) is true:
 				TM_TameEntity(event-entity, player, 1, 16, 0, 1, 1)
 				if player is not op:
