@@ -43,13 +43,20 @@ function TM_CanTame(e:entity) :: boolean:
 			return true
 	return false
 
+#
+function TM_IsSearchType(e:entity, tt:integer) :: boolean:
+	if {_tt} is 1:
+		if {_e} is monster:
+			return true
+	return false
+
 #================================================玩家互動
 on rightclick:
 	#把怪物馴服
 	if player's tool is {TameMobs.tameitem}:
 		if event-entity is not player:
 			if TM_CanTame(event-entity) is true:
-				TM_TameEntity(event-entity, player)
+				TM_TameEntity(event-entity, player, 1, 16, 0, 1, 1)
 				if player is not op:
 					remove {TameMobs.tameitem} from player
 				send "馴服了 %event-entity%" to player
@@ -65,7 +72,8 @@ on rightclick:
 				set {_nbt} to nbt compound of event-entity
 				send "%{_nbt}%" to player
 				if player is sneaking:
-					OpenTameMobGUI(event-entity, player)
+					if tag "custom;Tame;EnableGUI" of {_nbt} is 1:
+						OpenTameMobGUI(event-entity, player)
 				else:
 					#切換Follow功能
 					if tag "custom;Tame;Follow" of {_nbt} is 1:
@@ -92,15 +100,14 @@ on leftclick:
 
 #================================================基本設定
 #把一個生物馴服
-function TM_TameEntity(e:entity, owner:player) :: entity:
+function TM_TameEntity(e:entity, owner:player, follow:integer=1, trackRange:number=16, canSearchEnemy:integer=1, searchType:integer=1, enableGUI:integer=0) :: entity:
 	set {_nbt} to nbt compound of {_e}
 	#設定Owner uuid
 	set {_u} to uuid int array as string from {_owner}
-	add nbt compound of "{custom:{Tame:{Owner:%{_u}%,Follow:1,TrackRange:16,CanSearchEnemy:0}}}" to {_nbt}
+	add nbt compound of "{custom:{Tame:{Owner:%{_u}%,Follow:%{_follow}%,TrackRange:%{_trackRange}%,CanSearchEnemy:%{_canSearchEnemy}%,SearchType:%{_searchType}%,EnableGUI:%{_enableGUI}%}}}" to {_nbt}
 #	set {_uuid::*} to uuid int array of {_owner}
 #	broadcast "%{_uuid::*}%"
 #	set int array tag "custom;Tame;Owner" of {_nbt} to {_uuid::*}
-	set nbt compound of {_e} to {_nbt}
 	return {_e}
 
 #使用nbt uuid 找到 Tame;Owner
@@ -175,9 +182,9 @@ every 20 tick:
 		if TM_CanTame(loop-entity) is true:
 			set {_owner} to TM_GetOwner(loop-entity)
 			if {_owner} is set:
+				set {_nbt} to nbt compound of loop-entity
 				if loop-entity's target is set:
 					#超過追擊距離，強制中斷攻擊並返回
-					set {_nbt} to nbt compound of loop-entity
 					set {_dis} to distance between loop-entity and {_owner}
 					set {_track_dis} to tag "custom;Tame;TrackRange" of {_nbt}
 					if {_dis} is more than {_track_dis}:
@@ -185,7 +192,8 @@ every 20 tick:
 						set path target of loop-entity to {_owner}
 		#				teleport loop-entity to {_owner}
 				else:
-					TM_Follow(loop-entity, {_owner})
+					if tag "custom;Tame;Follow" of {_nbt} is 1:
+						TM_Follow(loop-entity, {_owner})
 					TM_SearchEnemy(loop-entity, {_owner})
 
 #生物追隨主人
@@ -227,13 +235,14 @@ function TM_SearchEnemy(mob: entity, p:player):
 	if {_enable} is 1:
 		set {_radius} to 24
 		set {_track_dis} to tag "custom;Tame;TrackRange" of {_nbt}
+		set {_searchType} to  tag "custom;Tame;SearchType" of {_nbt}
 		set {_close} to {_radius}
 		loop all entities in radius {_radius} of {_mob}:
 			#迴避相同owner的生物
 			if TM_SameTeamOrOwner({_mob}, loop-entity) is true:
 				continue
 			#可以成為target的實體種類
-			if loop-entity is a monster:
+			if TM_IsSearchType(loop-entity, {_searchType}) is true:
 				set {_dis} to distance between {_mob} and loop-entity
 				set {_dis2} to distance between {_p} and loop-entity
 				if {_dis} is less than {_close}:
@@ -243,7 +252,6 @@ function TM_SearchEnemy(mob: entity, p:player):
 						set {_target} to loop-entity
 		if {_target} is set:
 			TM_SetTarget({_mob}, {_target})
-
 
 #利用NBT設定piglin的攻擊目標
 function TM_SetTarget(mob:entity, target:entity):
