@@ -9,8 +9,6 @@
 #＞shift+空手右鍵馴服生物：打開裝備＋功能選單
 
 
-import:
-	org.bukkit.entity.EntityType
 
 command /tamemobs <string>:
 	description: 
