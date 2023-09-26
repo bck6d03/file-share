@@ -15,7 +15,7 @@ command /tamemobs <string>:
 	executable by: players
 	trigger:
 		if arg-1 is "give":
-		give player {TameMobs.tameitem}
+			give player {TameMobs.tameitem}
 
 on load:
 	set {TameMobs.tameitem} to cake named "馴服用物品"
